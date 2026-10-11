@@ -310,3 +310,7 @@ echo '{}' | ./dp record       # Quick smoke test
 ```
 
 Cross-platform releases are configured via `.goreleaser.yml` (linux, darwin, windows; amd64, arm64).
+
+### Failure-family measurement
+
+`internal/analyze/families.go` uses `mvdan.cc/sh/v3/syntax` to parse shell program structure without executing it. This dependency is justified by compound commands, quoting, pipes and heredocs: token splitting cannot safely recover their command identities. The normalized identity excludes argument values and hashes the complete ordered program shape plus tool and bounded error class. Unsupported wrappers/dynamic commands remain explicitly UNKNOWN. The `failure-families` CLI requires explicit start/end timestamps; consumers must distinguish historical peak counts from current-window counts, and must disclose normalization/capture coverage.
