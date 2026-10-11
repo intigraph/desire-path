@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -46,6 +47,33 @@ func New(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 	return s, nil
+}
+
+// NewReadOnly opens an existing current-schema database without migrations.
+// SQLite mode=ro enforces the boundary even if a caller attempts a write.
+func NewReadOnly(dbPath string) (*SQLiteStore, error) {
+	path, err := filepath.Abs(dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("resolve read-only database: %w", err)
+	}
+	u := url.URL{Scheme: "file", Path: path}
+	query := url.Values{"mode": {"ro"}, "_pragma": {"busy_timeout(5000)"}}
+	u.RawQuery = query.Encode()
+	db, err := sql.Open("sqlite", u.String())
+	if err != nil {
+		return nil, fmt.Errorf("open read-only database: %w", err)
+	}
+	db.SetMaxOpenConns(1)
+	var version int
+	if err := db.QueryRow("SELECT version FROM schema_version LIMIT 1").Scan(&version); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("read existing database schema: %w", err)
+	}
+	if version != schemaVersion {
+		db.Close()
+		return nil, fmt.Errorf("read-only database schema %d, expected %d; report cannot migrate", version, schemaVersion)
+	}
+	return &SQLiteStore{db: db}, nil
 }
 
 // migrate runs schema migrations up to the current version.

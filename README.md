@@ -145,3 +145,8 @@ See the [development guide](book/src/development/contributing.md).
 [MIT](LICENSE).
 
 Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
+
+Local `failure-families` reads require an existing database at the current schema
+version. The command opens it read-only: missing databases and schema mismatches
+return an error without creating a store or migrating it. Configured remote
+stores continue to use their existing read API.

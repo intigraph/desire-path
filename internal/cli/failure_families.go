@@ -35,7 +35,7 @@ func init() {
 			if !end.After(start) {
 				return fmt.Errorf("until must follow since")
 			}
-			s, err := openStore()
+			s, err := openReadOnlyStore()
 			if err != nil {
 				return err
 			}
