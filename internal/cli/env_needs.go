@@ -25,7 +25,8 @@ var envNeedsCmd = &cobra.Command{
 it identifies the specific missing commands and suggests installation.
 
 These are desires categorized as "env-need" — failed Bash tool calls where the
-error indicates a missing command (exit code 127, "command not found", etc.).`,
+execution diagnostic explicitly names a missing command. Bare exit codes,
+missing files and ambiguous interpreter failures are not install recommendations.`,
 	Example: `  dp env-needs
   dp env-needs --since 7d
   dp env-needs --json`,
@@ -90,7 +91,7 @@ func aggregateEnvNeeds(desires []model.Desire) []EnvNeed {
 	for _, d := range desires {
 		cmd := analyze.EnvNeedCommand(d.Error, d.ToolInput)
 		if cmd == "" {
-			cmd = "(unknown)"
+			continue
 		}
 		e, ok := byCmd[cmd]
 		if !ok {

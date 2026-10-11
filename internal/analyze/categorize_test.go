@@ -30,19 +30,19 @@ func TestCategorizeDesire_EnvNeed(t *testing.T) {
 			name:    "exit code 127",
 			tool:    "Bash",
 			errMsg:  "exit code 127",
-			wantCat: model.CategoryEnvNeed,
+			wantCat: "",
 		},
 		{
 			name:    "exit status 127",
 			tool:    "Bash",
 			errMsg:  "exit status 127",
-			wantCat: model.CategoryEnvNeed,
+			wantCat: "",
 		},
 		{
 			name:    "exit 127",
 			tool:    "Bash",
 			errMsg:  "exit 127",
-			wantCat: model.CategoryEnvNeed,
+			wantCat: "",
 		},
 		{
 			name:    "not found in PATH",
@@ -54,7 +54,7 @@ func TestCategorizeDesire_EnvNeed(t *testing.T) {
 			name:    "not installed",
 			tool:    "Bash",
 			errMsg:  "cargo-nextest is not installed",
-			wantCat: model.CategoryEnvNeed,
+			wantCat: "",
 		},
 		{
 			name:    "non-Bash tool ignored",
@@ -112,13 +112,13 @@ func TestEnvNeedCommand(t *testing.T) {
 			name:      "from tool_input when error unclear",
 			errMsg:    "exit code 127",
 			toolInput: json.RawMessage(`{"command":"cargo-insta test"}`),
-			wantCmd:   "cargo-insta",
+			wantCmd:   "",
 		},
 		{
 			name:      "from tool_input with env vars",
 			errMsg:    "exit code 127",
 			toolInput: json.RawMessage(`{"command":"RUST_BACKTRACE=1 cargo-nextest run"}`),
-			wantCmd:   "cargo-nextest",
+			wantCmd:   "",
 		},
 		{
 			name:    "no command extractable",
@@ -140,5 +140,32 @@ func TestEnvNeedCommand(t *testing.T) {
 				t.Errorf("EnvNeedCommand(%q, %s) = %q, want %q", tt.errMsg, tt.toolInput, got, tt.wantCmd)
 			}
 		})
+	}
+}
+
+func TestMissingCommandEvidence(t *testing.T) {
+	tests := []struct{ err, want string }{
+		{"ls: cannot access 'missing': No such file or directory", ""},
+		{"bash: ./script: cannot execute: required file not found", ""},
+		{"/bin/sh: 1: ./script: not found", ""},
+		{"/bin/sh: 1: absent-tool: not found", "absent-tool"},
+		{"cat: absent-tool: not found", ""},
+		{"Exit code 127", ""},
+		{"dependency is not installed", ""},
+		{"bash: line 12: absent-tool: command not found", "absent-tool"},
+		{"zsh: command not found: absent-tool", "absent-tool"},
+		{"bash: -C: command not found", ""},
+		{"bash: one: command not found\nbash: two: command not found", ""},
+		{"bash: absent-tool: command not found\n", "absent-tool"},
+	}
+	for _, tt := range tests {
+		input := json.RawMessage(`{"command":"cd /tmp; date; absent-tool --help"}`)
+		if got := EnvNeedCommand(tt.err, input); got != tt.want {
+			t.Errorf("%q: got %q want %q", tt.err, got, tt.want)
+		}
+		cat := CategorizeDesire("Bash", tt.err, input)
+		if (cat == model.CategoryEnvNeed) != (tt.want != "") {
+			t.Errorf("%q: category %q", tt.err, cat)
+		}
 	}
 }
