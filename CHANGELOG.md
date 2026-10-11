@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/scbrown/desire-path/compare/v0.7.0...v0.7.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* open local failure-family reports read-only ([#26](https://github.com/scbrown/desire-path/issues/26)) ([06ef02c](https://github.com/scbrown/desire-path/commit/06ef02c33b8de171f656c19295ccbc5b760f5dc9))
+
 ## [0.7.0](https://github.com/scbrown/desire-path/compare/v0.6.0...v0.7.0) (2026-10-11)
 
 
