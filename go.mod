@@ -8,6 +8,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/term v0.39.0
 	modernc.org/sqlite v1.44.3
+	mvdan.cc/sh/v3 v3.12.0
 )
 
 require (
