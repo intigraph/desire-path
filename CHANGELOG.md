@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/scbrown/desire-path/compare/v0.6.0...v0.7.0) (2026-10-11)
+
+
+### Features
+
+* measure bounded rolling failure families ([#23](https://github.com/scbrown/desire-path/issues/23)) ([6daa72e](https://github.com/scbrown/desire-path/commit/6daa72e24fe557466500c33e68abad81b02011a0))
+
+
+### Bug Fixes
+
+* require diagnostic evidence for missing command needs ([#25](https://github.com/scbrown/desire-path/issues/25)) ([680fe4d](https://github.com/scbrown/desire-path/commit/680fe4df4c337f914ec184afad5c9d753fd618d5))
+
 ## [0.6.0](https://github.com/scbrown/desire-path/compare/v0.5.0...v0.6.0) (2026-10-08)
 
 
