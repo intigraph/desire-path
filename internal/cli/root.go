@@ -89,6 +89,15 @@ func openStore() (store.Store, error) {
 	return store.New(dbPath)
 }
 
+// openReadOnlyStore keeps report commands from creating or migrating a local DB.
+// A configured remote store already exposes its existing read API.
+func openReadOnlyStore() (store.Store, error) {
+	if storeMode == "remote" {
+		return openStore()
+	}
+	return store.NewReadOnly(dbPath)
+}
+
 // Execute runs the root command.
 func Execute() error {
 	return rootCmd.Execute()
