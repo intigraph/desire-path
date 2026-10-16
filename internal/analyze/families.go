@@ -135,6 +135,17 @@ func commandShape(raw json.RawMessage) (string, bool) {
 	return strings.Join(parts, "/"), ok && len(parts) > 0
 }
 
+// CommandProgram returns argument-free identities in submitted shell order.
+// These are program contents, not a claim that every command executed. Dynamic
+// commands and unsupported wrappers remain unknown, as in failure families.
+func CommandProgram(raw json.RawMessage) (string, bool) {
+	if len(raw) > 64*1024 {
+		return "", false
+	}
+	shape, ok := commandShape(raw)
+	return shape, ok && len(strings.Split(shape, "/")) <= 64
+}
+
 // AggregateFailureFamilies groups complete shell command-program shapes, not
 // an inferred failing subcommand. Arguments, paths, errors and credentials are
 // excluded from identity. Unsupported execution wrappers remain UNKNOWN.

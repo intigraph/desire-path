@@ -52,6 +52,7 @@ func Ingest(ctx context.Context, s store.Store, raw []byte, sourceName string) (
 // transcript is parsed to enrich the invocation with turn context (turn_id,
 // turn_sequence, turn_length).
 func IngestFields(ctx context.Context, s store.Store, fields *source.Fields, sourceName string) (model.Invocation, error) {
+	fields = bashEvidence(fields)
 	var reviewFields *source.Fields
 	if os.Getenv("DP_QUIPU_REVIEW") == "1" {
 		hosts := strings.Split(os.Getenv("DP_QUIPU_HTTP_HOSTS"), ",")
