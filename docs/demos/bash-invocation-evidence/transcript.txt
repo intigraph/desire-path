@@ -1,0 +1,11 @@
+Script started on 2026-10-16 15:38:08-04:00 [COMMAND="python3 demo.py" <not executed on terminal>]
+base 3abe720
+{"fixture": "success", "submitted_command": "sd show example --json", "is_error": false, "command_shape": null, "failure_evidence": null}
+{"fixture": "masked", "submitted_command": "sd create example || true", "is_error": false, "command_shape": null, "failure_evidence": null}
+{"fixture": "native", "submitted_command": "sd create example", "is_error": true, "command_shape": null, "failure_evidence": null}
+candidate b7a6e01
+{"fixture": "success", "submitted_command": "sd show example --json", "is_error": false, "command_shape": "sd:show", "failure_evidence": null}
+{"fixture": "masked", "submitted_command": "sd create example || true", "is_error": true, "command_shape": "sd:create/true", "failure_evidence": "output-signature"}
+{"fixture": "native", "submitted_command": "sd create example", "is_error": true, "command_shape": "sd:create", "failure_evidence": "native-error"}
+
+Script done on 2026-10-16 15:38:09-04:00 [COMMAND_EXIT_CODE="0"]
