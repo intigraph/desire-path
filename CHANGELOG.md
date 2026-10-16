@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/scbrown/desire-path/compare/v0.7.1...v0.8.0) (2026-10-16)
+
+
+### Features
+
+* **ingest:** capture Bash programs and masked output errors ([#32](https://github.com/scbrown/desire-path/issues/32)) ([38e5381](https://github.com/scbrown/desire-path/commit/38e538155a4330a911c5af523edc6aeed46ebac3))
+
 ## [0.7.1](https://github.com/scbrown/desire-path/compare/v0.7.0...v0.7.1) (2026-10-11)
 
 
