@@ -14,7 +14,9 @@ uses util-linux `script`; download both text files and replay with:
 scriptreplay --log-out transcript.txt --log-timing timing.txt
 ```
 
-The recording is retained with the source in Git. It requires downloading and
+Download the [transcript](transcript.txt) and [timing](timing.txt); the
+[reproducer](demo.py) is included. The recording is retained with the source in
+Git. It requires downloading and
 a compatible terminal replay tool; no inline player is claimed. Documentation
 and recording commits after `b7a6e01` preserve its demonstrated Go blobs.
 This proves candidate ingestion behavior, not an installed hook or fleet rollout.
