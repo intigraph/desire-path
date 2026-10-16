@@ -4,6 +4,11 @@ Adds tracking of all tool invocations (not just failures), with a plugin system 
 
 **Status: COMPLETE** — All tasks implemented and tested.
 
+Follow-up in progress: argument-free Bash program identities on every invocation
+and separately labeled output-signature failures. Design:
+`docs/plans/009-bash-invocation-evidence.md`. Runtime hook/release acceptance is
+separate from source tests; historical command coverage remains unknown.
+
 ## Tasks
 
 ### 5.1 Source plugin interface (`internal/source/source.go`)

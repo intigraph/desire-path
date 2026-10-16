@@ -47,6 +47,60 @@ Each invocation records:
 - **timestamp**: When it happened
 - **metadata**: Additional context as JSON (optional)
 
+### Bash command and output evidence
+
+New Bash invocations include `command_capture`, `command_shape`, and ordered
+`command_argv0` metadata. Identities omit arguments and paths. For example,
+`cd project && sd show item || true` records `cd/sd:show/true`; this describes
+the submitted program, not which branches executed or which command failed.
+Dynamic commands, unsupported execution wrappers, and oversized inputs record
+`command_capture=unknown`. Older rows have no command attribution; they are not
+backfilled or counted as successful captures.
+
+Line-anchored `Error:`, `Fatal:`, `REFUSED`, and HTTP 4xx/5xx output signatures
+also produce error invocations and desires when the caller masks its exit.
+`failure_evidence=output-signature` distinguishes these from `native-error`.
+An expected negative control can print an error, so signature counts require
+interpretation; they are not independently verified subprocess failures.
+`output_scan=unknown` discloses absent, unsupported, or oversized responses.
+The original response remains available in the existing metadata.
+
+This SQLite query counts weekly **captured invocations containing a tool**,
+deduplicating repeated mentions within a program. It separates native errors
+from output signatures rather than assigning a chain's failure to `cd`:
+
+```sql
+WITH programs AS (
+  SELECT DISTINCT i.id, strftime('%Y-%W', i.timestamp) AS week,
+         c.value AS command, i.is_error,
+         json_extract(i.metadata, '$.failure_evidence') AS evidence
+  FROM invocations AS i, json_each(i.metadata, '$.command_argv0') AS c
+  WHERE i.timestamp >= '2026-10-01' AND i.timestamp < '2026-11-01'
+    AND c.value IN ('bd', 'br', 'sd', 'gh')
+)
+SELECT week, command, count(*) AS captured_invocations,
+       sum(is_error = 1 AND evidence = 'native-error') AS native_errors,
+       sum(is_error = 1 AND evidence = 'output-signature') AS output_signatures,
+       round(100.0 * sum(is_error) / count(*), 2) AS flagged_percent
+FROM programs GROUP BY week, command ORDER BY week, command;
+```
+
+Always report capture coverage over the same date interval too:
+
+```sql
+SELECT coalesce(json_extract(metadata, '$.command_capture'), 'historical-unknown')
+         AS capture, count(*) AS invocations
+FROM invocations
+WHERE tool_name IN ('Bash', 'exec_command', 'functions.exec_command')
+  AND timestamp >= '2026-10-01' AND timestamp < '2026-11-01'
+GROUP BY capture;
+```
+
+Dates are explicit example bounds; choose the intended reporting interval.
+Use an existing database through a read-only SQLite connection. Masked exits
+cannot be recovered when the caller suppresses both its status and output;
+preserve command exits in scripts and include errors in tool responses.
+
 ## Viewing Invocation Stats
 
 Get aggregated statistics:
