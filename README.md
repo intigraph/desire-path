@@ -177,7 +177,18 @@ See the [development guide](book/src/development/contributing.md).
 
 [MIT](LICENSE).
 
-Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
+Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --max-records 10000 --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
+
+`--max-records` defaults to 10000 and accepts 1 through 100000. The store query
+loads at most the cap plus one sentinel; overflow returns an error without partial
+counts. Future records after `--until` conservatively consume this candidate cap
+because the existing store selector bounds only `--since`. JSON also identifies
+the exact `since`/`until`, `max_records`, `input_records` and `complete: true`.
+Complete means the candidate inventory fit the cap, not that normalization or
+failure capture was complete: consumers must still inspect `unknown` and
+`excluded`. A record cap bounds materialized rows, not total input bytes or query
+latency. Prefer one current window for scheduled threshold evaluation; a historical
+report requires its own bounded read-cost admission.
 
 Local `failure-families` reads require an existing database at the current schema
 version. The command opens it read-only: missing databases and schema mismatches
