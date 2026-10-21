@@ -62,8 +62,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install pinned RDF test parser
-        run: python3 -m pip install rdflib==7.6.0
+      - name: Install pinned test parsers
+        run: python3 -m pip install rdflib==7.6.0 PyYAML==6.0.3
       - name: Test copied pointer and publication boundaries
         run: |
           python3 scripts/test-repository-share-query.py
