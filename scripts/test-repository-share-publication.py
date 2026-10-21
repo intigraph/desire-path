@@ -11,7 +11,10 @@ import tempfile
 import unittest
 import sys
 import os
+import subprocess
 from unittest.mock import patch
+
+import yaml
 
 # Release source must stay clean when modules load.
 sys.dont_write_bytecode = True
@@ -217,6 +220,91 @@ class Publication(unittest.TestCase):
             verifier.wait("v1.2.3", self.revision, attempts=2, pause=pauses.append, run=run)
         self.assertEqual(len(calls), 2)
         self.assertEqual(pauses, [30])
+
+
+class PendantAdmission(unittest.TestCase):
+    """Option B: admission state is visible, never a verification pass."""
+
+    def jobs(self):
+        return yaml.safe_load((ROOT.parent / ".github/workflows/release.yml").read_text())["jobs"]
+
+    def test_verifier_requires_admission_and_successful_release(self):
+        job = self.jobs()["repository-pendant"]
+        self.assertEqual(job["if"], "always() && needs.goreleaser.result == 'success' && vars.DP_PENDANT_PUBLICATION == 'enabled'")
+        self.assertEqual(job["needs"], "goreleaser")
+        self.assertEqual(job["timeout-minutes"], 45)
+        self.assertEqual(job["permissions"], {"contents": "read"})
+        self.assertTrue(any('verify-repository-share.py "$RELEASE_TAG"' in step.get("run", "") for step in job["steps"]))
+
+    def test_recorded_state_has_no_implicit_admission_or_verification(self):
+        job = self.jobs()["repository-pendant-admission"]
+        self.assertEqual(job["if"], "always() && needs.goreleaser.result == 'success'")
+        self.assertEqual(job["needs"], "goreleaser")
+        self.assertEqual(job["permissions"], {})
+        self.assertEqual(job["env"], {"ADMISSION": "${{ vars.DP_PENDANT_PUBLICATION }}"})
+        script = job["steps"][0]["run"]
+        for value, expected in (("", "NOT ADMITTED"), ("disabled", "NOT ADMITTED"),
+                                ("ENABLED", "NOT ADMITTED"), ("enabled\ninjected", "NOT ADMITTED"),
+                                ("enabled", "admitted:")):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                summary = Path(directory) / "summary"
+                result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", script],
+                                        capture_output=True, text=True, check=True,
+                                        env={"PATH": "/usr/bin:/bin", "ADMISSION": value,
+                                             "GITHUB_STEP_SUMMARY": str(summary)})
+                self.assertIn(expected, result.stdout)
+                self.assertIn(expected, summary.read_text())
+                self.assertNotIn("verified", result.stdout.lower())
+                self.assertNotIn("injected", result.stdout)
+
+
+class ReleaseTagContract(unittest.TestCase):
+    def setUp(self):
+        self.jobs = yaml.safe_load((ROOT.parent / ".github/workflows/release.yml").read_text())["jobs"]
+
+    def propagate(self, tag):
+        release = self.jobs["goreleaser"]
+        # Preserve the existing, production release lane's three-arm selector.
+        selector = release["env"]["VERSION"]
+        for source in ("inputs.version", "github.ref_name", "needs.release-please.outputs.tag_name"):
+            self.assertIn(source, selector)
+        step = next(s for s in release["steps"] if s.get("id") == "release_tag")
+        self.assertEqual(release["outputs"]["release_tag"], "${{ steps.release_tag.outputs.tag }}")
+        pendant = self.jobs["repository-pendant"]
+        self.assertEqual(pendant["needs"], "goreleaser")
+        self.assertIn("needs.goreleaser.result == 'success'", pendant["if"])
+        self.assertEqual(pendant["env"]["RELEASE_TAG"], "${{ needs.goreleaser.outputs.release_tag }}")
+        checkout = next(s for s in pendant["steps"] if s.get("uses", "").startswith("actions/checkout@"))
+        self.assertEqual(checkout["with"]["ref"], "${{ env.RELEASE_TAG }}")
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            result = subprocess.run(
+                ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
+                env={"PATH": "/usr/bin:/bin", "VERSION": tag, "GITHUB_OUTPUT": str(output)},
+                capture_output=True, text=True,
+            )
+            return result, output.read_text() if output.exists() else ""
+
+    def test_release_created_on_main_uses_created_tag(self):
+        # On this arm github.ref_name is main. The unchanged GoReleaser selector
+        # resolves release-please's tag; execute its actual output step.
+        result, output = self.propagate("v0.9.0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "tag=v0.9.0\n")
+
+    def test_tag_push_and_manual_dispatch_keep_their_selected_tag(self):
+        for arm, tag in (("tag push", "v0.8.0"), ("manual dispatch from main", "v0.7.0")):
+            with self.subTest(arm=arm):
+                result, output = self.propagate(tag)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(output, f"tag={tag}\n")
+
+    def test_branch_empty_and_output_injection_are_refused(self):
+        for tag in ("main", "", "v0.9.0\ninjected=value"):
+            with self.subTest(tag=tag):
+                result, output = self.propagate(tag)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(output, "")
 
 
 if __name__ == "__main__":
