@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -343,5 +344,39 @@ func TestRecordRespectsAllowlistSameAsIngest(t *testing.T) {
 	// Database should not have been created.
 	if _, statErr := os.Stat(dbFile); statErr == nil {
 		t.Error("database should not have been created for skipped tool")
+	}
+}
+
+func TestIngestCodexStopLargeStdin(t *testing.T) {
+	resetFlags(t)
+	dir := t.TempDir()
+	t.Setenv("DESIRE_PATH_METRICS_PUSHGATEWAY", "")
+	oldCfg, oldDB, oldStdin := configPath, dbPath, os.Stdin
+	configPath, dbPath = filepath.Join(dir, "config.toml"), filepath.Join(dir, "ingest.db")
+	defer func() { configPath, dbPath, os.Stdin = oldCfg, oldDB, oldStdin }()
+	pipeStdin(t, `{"hook_event_name":"Stop","session_id":"large-session","cwd":"/fixture/project","turn_id":"large-turn","last_assistant_message":"`+strings.Repeat("x", 256*1024)+`"}`)
+	defer os.Stdin.Close()
+	inv, err := doIngest("codex")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inv == nil || inv.ToolName != "agent_turn" || inv.InstanceID != "large-session" || inv.CWD != "/fixture/project" {
+		t.Fatalf("bad invocation: %+v", inv)
+	}
+	s, err := store.New(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	rows, err := s.ListInvocations(context.Background(), store.InvocationOpts{})
+	if err != nil || len(rows) != 1 {
+		t.Fatalf("stored records=%d err=%v", len(rows), err)
+	}
+	var extra map[string]json.RawMessage
+	if err := json.Unmarshal(rows[0].Metadata, &extra); err != nil {
+		t.Fatal(err)
+	}
+	if string(extra["turn_id"]) != `"large-turn"` {
+		t.Fatalf("turn_id not persisted: %v", extra)
 	}
 }

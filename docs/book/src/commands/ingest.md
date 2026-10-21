@@ -38,3 +38,23 @@ Source plugins are responsible for:
 This command is useful for bulk imports, integrating with custom AI tools, or processing historical data that wasn't captured in real-time.
 
 Plugins are discovered from the `source/` package. To add a new source, implement the Source interface and register it in the plugin registry.
+
+## Codex Stop hooks
+
+Configure a native Codex Stop hook with `dp init --source codex`, or install the
+complete bundle with `dp hooks install`. The fixed command
+`dp ingest --source codex` reads the hook JSON from stdin; turn JSON must never
+be appended as an argument. This allows long turns to pass the operating
+system's single-argument limit.
+
+```sh
+printf '%s' '{"hook_event_name":"Stop","session_id":"example-session","cwd":"/project","turn_id":"turn-1"}' | dp ingest --source codex
+```
+
+This records one `agent_turn` invocation with the session as `instance_id` and
+`turn_id` in metadata. Stop requires a nonempty string session ID. Other hook
+events are refused. Assistant prose and transcript contents are not recorded by
+this adapter. Existing notify payloads with `type: agent-turn-complete` and
+`thread-id` still parse, but new installations use Stop because notify delivers
+its entire payload through argv. Only the exact old dp notify command is retired;
+foreign notify commands and other hooks are preserved.

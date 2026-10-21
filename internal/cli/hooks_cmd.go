@@ -4,9 +4,10 @@ package cli
 // definitions and installs them into Claude Code AND Codex (aegis-5s32or).
 //
 // `dp init --source <plugin>` predates this and installs one source's ingest
-// hooks; it is unchanged. This command is the harness-neutral one, and it
+// hooks. Both Codex installers now use Stop stdin ingestion. This command is
+// the harness-neutral one, and it
 // carries dp's FULL hook set (ingest, signpost, signpost-prefetch,
-// pave-correct and the codex notify), which until now existed only as a copy
+// pave-correct and the Codex Stop stdin hook), which until now existed only as a copy
 // inside caboodle.
 //
 // On a host running shantytown, install REGISTERS the bundle with `st ops hooks
@@ -216,6 +217,16 @@ func notifyState(cfg map[string]any, b map[string]any) string {
 	}
 }
 
+// retireLegacyCodexNotify removes only our former exact standalone argv.
+func retireLegacyCodexNotify(cfg map[string]any) bool {
+	legacy := []any{"bash", "-c", `printf '%s' "$1" | dp ingest --source codex`, "--"}
+	if !notifyEqual(cfg["notify"], legacy) {
+		return false
+	}
+	delete(cfg, "notify")
+	return true
+}
+
 func hooksConfigPath(harness string, project bool) string {
 	home, _ := os.UserHomeDir()
 	switch {
@@ -389,6 +400,9 @@ func runHooks(action string) error {
 		switch action {
 		case "install":
 			n := mergeHooks(cfg, b, h)
+			if h == "codex" && len(notifyArgv(b)) == 0 && retireLegacyCodexNotify(cfg) {
+				n++
+			}
 			if h == "codex" && len(notifyArgv(b)) > 0 {
 				switch notifyState(cfg, b) {
 				case "absent":
@@ -406,6 +420,9 @@ func runHooks(action string) error {
 			fmt.Printf("%s: added %d hook(s) to %s\n", h, n, path)
 		case "uninstall":
 			n := removeHooks(cfg, b, h)
+			if h == "codex" && len(notifyArgv(b)) == 0 && retireLegacyCodexNotify(cfg) {
+				n++
+			}
 			if h == "codex" && notifyState(cfg, b) == "ours" {
 				delete(cfg, "notify")
 				n++
