@@ -10,6 +10,8 @@ from pathlib import Path
 import tempfile
 import unittest
 import sys
+import os
+from unittest.mock import patch
 
 # Release source must stay clean when modules load.
 sys.dont_write_bytecode = True
@@ -123,6 +125,63 @@ class Publication(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("usage:", result.stderr)
         self.assertEqual(list(source.rglob("*.pyc")), [])
+
+    def host_environment(self):
+        host = self.root / "synthetic-host"
+        host.mkdir()
+        (host / "config-marker").write_text("fixture only")
+        return {
+            "HOME": str(host), "XDG_CONFIG_HOME": str(host),
+            "XDG_DATA_HOME": str(host), "XDG_CACHE_HOME": str(host),
+            **{key: "synthetic-fixture" for key in (
+                "BOBBIN_SERVER", "BOBBIN_QUIPU_REMOTE", "BOBBIN_QUIPU_TOKEN",
+                "QUIPU_SERVER", "QUIPU_DB", "QUIPU_AUTH_TOKEN",
+                "QUIPU_AUTH_TOKEN_FILE", "GH_TOKEN", "GITHUB_TOKEN",
+            )},
+        }
+
+    def test_command_isolates_host_configuration_and_policy_exception(self):
+        builder = load("builder_environment_test", ROOT / "build-repository-share.py")
+        private = self.root / "private"
+        private.mkdir()
+        probe = (
+            "import json,os;from pathlib import Path;"
+            "print(json.dumps({'host_config':(Path.home()/'config-marker').exists(),"
+            "'inherited':[k for k in os.environ if k in "
+            "['BOBBIN_SERVER','QUIPU_SERVER','QUIPU_DB','QUIPU_AUTH_TOKEN',"
+            "'QUIPU_AUTH_TOKEN_FILE','GH_TOKEN','GITHUB_TOKEN'] or k.startswith('BOBBIN_QUIPU_')],"
+            "'homes':[os.environ[k] for k in ['HOME','XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_CACHE_HOME']]}))"
+        )
+        with patch.dict(os.environ, self.host_environment()):
+            # The explicit policy-helper exception still sees synthetic host config.
+            control = json.loads(builder.command([sys.executable, "-I", "-c", probe], env=dict(os.environ), cwd=private))
+            self.assertTrue(control["host_config"])
+            self.assertTrue(control["inherited"])
+            result = json.loads(builder.command([sys.executable, "-I", "-c", probe], cwd=private))
+        self.assertFalse(result["host_config"])
+        self.assertEqual(result["inherited"], [])
+        self.assertEqual(len(set(result["homes"])), 4)
+        for directory in result["homes"]:
+            self.assertTrue(Path(directory).is_relative_to(private))
+            self.assertTrue(Path(directory).is_dir())
+
+    def test_mcp_child_isolates_host_configuration(self):
+        builder = load("builder_mcp_environment_test", ROOT / "build-repository-share.py")
+        child = self.root / "fixture-mcp"
+        child.write_text(
+            "#!" + sys.executable + "\n"
+            "import json,os,sys\nfrom pathlib import Path\n"
+            "for line in sys.stdin:\n"
+            " r=json.loads(line)\n"
+            " if 'id' not in r:continue\n"
+            " isolated=not (Path.home()/'config-marker').exists() and not any(k in os.environ for k in ['QUIPU_SERVER','GH_TOKEN','BOBBIN_QUIPU_TOKEN'])\n"
+            " result={} if r['id']==0 else {'content':[{'type':'text','text':json.dumps({'isolated':isolated})}]}\n"
+            " print(json.dumps({'jsonrpc':'2.0','id':r['id'],'result':result}),flush=True)\n"
+        )
+        child.chmod(0o700)
+        with patch.dict(os.environ, self.host_environment()):
+            (result,) = builder.local_mcp(child, self.root / "fixture.db", [("fixture", {})])
+        self.assertEqual(result, {"isolated": True})
 
     def test_wait_is_bounded(self):
         calls, pauses = [], []
