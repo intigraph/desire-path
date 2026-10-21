@@ -1,0 +1,113 @@
+{
+  "source_revision": "f742fea0e10d33c211825d775a9d3d696b1a4452",
+  "reviewed_at": "2026-10-21T00:08:08.544980Z",
+  "max_age_seconds": 2592000,
+  "records": [
+    {
+      "kind": "idea",
+      "source": "README.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/README.md",
+      "summary": "Desire Path records tool-call failures, groups repeated desires and records mappings to real tool names. An alias records a mapping; active interception has separate setup.",
+      "source_sha256": "c3e9650b3bc7232fbbb698fac3b78b04815877c1c23f40b6f1a597f668c9e6e9",
+      "type": "Concept"
+    },
+    {
+      "kind": "idea",
+      "source": "docs/book/src/architecture.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/docs%2Fbook%2Fsrc%2Farchitecture.md",
+      "summary": "Source plugins normalize raw tool payloads into shared fields; ingestion persists calls through the store interface and query commands expose patterns. The defining Go interfaces remain the authority.",
+      "source_sha256": "d40d4b4b180ebae18d41e91114f82d0fbaa2cc9c105daf4c2543f7979f255dfa",
+      "type": "Concept"
+    },
+    {
+      "kind": "interface",
+      "source": "internal/cli/root.go",
+      "subject": "http://aegis.gastown.local/ontology/code/desire-path/internal%2Fcli%2Froot.go",
+      "summary": "The dp command defines its Cobra root, database and JSON output flags, and configuration-driven store selection.",
+      "source_sha256": "45ed64b779cec7ed56688d1cc2fc5b80d681afc0b7ebd7ef542518be6681305e",
+      "properties": {
+        "interfaceKind": "CLI",
+        "publicName": "dp --db, --json and command tree"
+      }
+    },
+    {
+      "kind": "interface",
+      "source": "internal/config/config.go",
+      "subject": "http://aegis.gastown.local/ontology/code/desire-path/internal%2Fconfig%2Fconfig.go",
+      "summary": "Configuration uses config.toml with explicit valid keys for database, source, known tools, output and store selection; legacy JSON loading is handled separately.",
+      "source_sha256": "24123a0173daed8211eaa51c74124ccce6322daad7facbf92e62bdaa690a7fbe",
+      "properties": {
+        "interfaceKind": "file-format",
+        "publicName": "config.toml and legacy JSON configuration"
+      }
+    },
+    {
+      "kind": "interface",
+      "source": "internal/source/source.go",
+      "subject": "http://aegis.gastown.local/ontology/code/desire-path/internal%2Fsource%2Fsource.go",
+      "summary": "Source plugins expose Name, Description and Extract over raw bytes and normalized Fields; optional Installer methods govern hook setup and installed-state checks.",
+      "source_sha256": "22e15a3d17a4679e093b8fdfd08e6dd3c1abee980a90a4885e3616add7178023",
+      "properties": {
+        "interfaceKind": "library",
+        "publicName": "internal source.Source and optional source.Installer"
+      }
+    },
+    {
+      "kind": "interface",
+      "source": "internal/signpost/signpost.go",
+      "subject": "http://aegis.gastown.local/ontology/code/desire-path/internal%2Fsignpost%2Fsignpost.go",
+      "summary": "Optional signposting uses a configured Bobbin search endpoint, scoped result pointers and explicit payload budgets. This integration is separate from local recording.",
+      "source_sha256": "3e65591d26b0137413b333338ac3c83e5d8383ff9cc36906b2b4a5f1ff9377eb",
+      "properties": {
+        "interfaceKind": "REST",
+        "publicName": "Optional Bobbin search integration"
+      },
+      "depends_on": [
+        "http://aegis.gastown.local/ontology/repo_bobbin"
+      ]
+    },
+    {
+      "kind": "decision",
+      "source": "AGENTS.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/AGENTS.md",
+      "summary": "Keep dependencies minimal, use the standard testing package with table-driven cases, and use pure-Go SQLite to preserve builds without CGo.",
+      "source_sha256": "3104c1737550fdf8878afaf4557de4cbdb4c04db2c6c1cfc5dea3461339756ef",
+      "type": "DecisionRecord",
+      "properties": {
+        "status": "active",
+        "supersessionStatus": "not-recorded-in-source"
+      }
+    },
+    {
+      "kind": "start-here",
+      "source": "README.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/README.md",
+      "summary": "Start with the temporary-database failed-call example before installing agent hooks or sharing exports.",
+      "source_sha256": "c3e9650b3bc7232fbbb698fac3b78b04815877c1c23f40b6f1a597f668c9e6e9",
+      "properties": {
+        "startHereOrder": 1,
+        "glossaryTerm": "https://scbrown.github.io/quechua/ns#Tool"
+      }
+    },
+    {
+      "kind": "start-here",
+      "source": "docs/book/src/configuration.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/docs%2Fbook%2Fsrc%2Fconfiguration.md",
+      "summary": "Read configuration and per-command overrides before selecting a persistent database or changing capture defaults.",
+      "source_sha256": "40f8029b2f5c5a8e7b867071c4d930bf653e899b6d3cdf29a1f30788c499a40f",
+      "properties": {
+        "startHereOrder": 2
+      }
+    },
+    {
+      "kind": "start-here",
+      "source": "AGENTS.md",
+      "subject": "http://aegis.gastown.local/ontology/doc/desire-path/AGENTS.md",
+      "summary": "Use the source development instructions for package layout, source plugins, dependency policy and tests.",
+      "source_sha256": "3104c1737550fdf8878afaf4557de4cbdb4c04db2c6c1cfc5dea3461339756ef",
+      "properties": {
+        "startHereOrder": 3
+      }
+    }
+  ]
+}
