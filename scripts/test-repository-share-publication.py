@@ -222,6 +222,42 @@ class Publication(unittest.TestCase):
         self.assertEqual(pauses, [30])
 
 
+class PendantAdmission(unittest.TestCase):
+    """Option B: admission state is visible, never a verification pass."""
+
+    def jobs(self):
+        return yaml.safe_load((ROOT.parent / ".github/workflows/release.yml").read_text())["jobs"]
+
+    def test_verifier_requires_admission_and_successful_release(self):
+        job = self.jobs()["repository-pendant"]
+        self.assertEqual(job["if"], "always() && needs.goreleaser.result == 'success' && vars.DP_PENDANT_PUBLICATION == 'enabled'")
+        self.assertEqual(job["needs"], "goreleaser")
+        self.assertEqual(job["timeout-minutes"], 45)
+        self.assertEqual(job["permissions"], {"contents": "read"})
+        self.assertTrue(any('verify-repository-share.py "$RELEASE_TAG"' in step.get("run", "") for step in job["steps"]))
+
+    def test_recorded_state_has_no_implicit_admission_or_verification(self):
+        job = self.jobs()["repository-pendant-admission"]
+        self.assertEqual(job["if"], "always() && needs.goreleaser.result == 'success'")
+        self.assertEqual(job["needs"], "goreleaser")
+        self.assertEqual(job["permissions"], {})
+        self.assertEqual(job["env"], {"ADMISSION": "${{ vars.DP_PENDANT_PUBLICATION }}"})
+        script = job["steps"][0]["run"]
+        for value, expected in (("", "NOT ADMITTED"), ("disabled", "NOT ADMITTED"),
+                                ("ENABLED", "NOT ADMITTED"), ("enabled\ninjected", "NOT ADMITTED"),
+                                ("enabled", "admitted:")):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                summary = Path(directory) / "summary"
+                result = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", script],
+                                        capture_output=True, text=True, check=True,
+                                        env={"PATH": "/usr/bin:/bin", "ADMISSION": value,
+                                             "GITHUB_STEP_SUMMARY": str(summary)})
+                self.assertIn(expected, result.stdout)
+                self.assertIn(expected, summary.read_text())
+                self.assertNotIn("verified", result.stdout.lower())
+                self.assertNotIn("injected", result.stdout)
+
+
 class ReleaseTagContract(unittest.TestCase):
     def setUp(self):
         self.jobs = yaml.safe_load((ROOT.parent / ".github/workflows/release.yml").read_text())["jobs"]

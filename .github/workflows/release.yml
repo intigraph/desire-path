@@ -85,10 +85,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Option B: verification expects a trusted host publisher only after explicit
+  # repository admission. Unset is NOT ADMITTED, not a verification pass.
+  repository-pendant-admission:
+    name: Record repository pendant admission
+    needs: goreleaser
+    if: always() && needs.goreleaser.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    env:
+      ADMISSION: ${{ vars.DP_PENDANT_PUBLICATION }}
+    steps:
+      - name: Record admission state
+        run: |
+          if [ "$ADMISSION" = enabled ]; then
+            state="admitted: the trusted host publisher must deliver and Verify repository pendant runs"
+          else
+            state="NOT ADMITTED: no trusted publisher is enabled for desire-path, so no pendant is expected and Verify repository pendant is skipped by its condition (not a pass; aegis-ro425e.16)"
+          fi
+          echo "repository pendant publication: $state"
+          echo "Repository pendant publication: $state" >> "$GITHUB_STEP_SUMMARY"
+
   repository-pendant:
     name: Verify repository pendant
     needs: goreleaser
-    if: always() && needs.goreleaser.result == 'success'
+    if: always() && needs.goreleaser.result == 'success' && vars.DP_PENDANT_PUBLICATION == 'enabled'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
