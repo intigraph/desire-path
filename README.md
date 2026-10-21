@@ -8,7 +8,7 @@
 <h1 align="center">Desire Path</h1>
 <p align="center"><em>👣 Find the tool calls your agents get wrong, and turn repeats into fixes.</em></p>
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache-2.0"></a>
   <a href="https://github.com/scbrown/desire-path/actions/workflows/ci.yml"><img src="https://github.com/scbrown/desire-path/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/scbrown/caboodle"><img src="https://img.shields.io/badge/stack-quipu-8B5E3C.svg" alt="Quipu stack"></a>
 </p>
@@ -175,7 +175,7 @@ See the [development guide](book/src/development/contributing.md).
 
 ## 📜 License
 
-[MIT](LICENSE).
+[Apache-2.0](LICENSE).
 
 Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --max-records 10000 --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
 
