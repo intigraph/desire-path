@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/intigraph/desire-path/compare/v0.9.0...v0.10.0) (2026-10-23)
+
+
+### Features
+
+* add verified installer and concise stack guide ([#39](https://github.com/intigraph/desire-path/issues/39)) ([9697a89](https://github.com/intigraph/desire-path/commit/9697a89c2550e49870eb63911dc2df0b64fae209))
+
+
+### Bug Fixes
+
+* ingest Codex Stop hooks over stdin ([#41](https://github.com/intigraph/desire-path/issues/41)) ([d04736b](https://github.com/intigraph/desire-path/commit/d04736ba7056aec2b7792f1fd01862308105a551))
+
 ## [0.9.0](https://github.com/scbrown/desire-path/compare/v0.8.0...v0.9.0) (2026-10-21)
 
 
