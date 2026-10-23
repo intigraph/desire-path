@@ -18,57 +18,22 @@ fewer repeated tool-call failures. It stores calls locally, ranks recurring
 failures, and records mappings from mistaken tool names to real ones.**
 The name comes from the trails people wear through grass: evidence of where a path is needed.
 
-## Why you would want it
-
-- Find repeated failures across sessions instead of reading each transcript.
-- Compare mistaken tool names with known tools and record the intended mapping.
-- Use the failure history to improve instructions, tool names, or integrations.
-
-Read [how the workflow fits together](https://scbrown.github.io/desire-path/introduction.html).
-
 ## Install
 
-**Debian and Ubuntu (amd64 and arm64):** install from the signed apt repository, which
-republishes each checksum-verified release. The package puts `dp` in
-`/usr/bin`. Check the signing key's fingerprint before trusting it; the
-commands stop if it does not match:
-
-```bash
-curl -fsSL https://scbrown.github.io/apt/key.gpg -o scbrown-stack.gpg \
-  && gpg --show-keys --with-colons scbrown-stack.gpg \
-  | grep -qx 'fpr:::::::::AB5625C5612F643BF76464DF0DC99924994EC959:' \
-  && sudo install -D -m 0644 scbrown-stack.gpg /etc/apt/keyrings/scbrown-stack.gpg \
-  && echo "deb [signed-by=/etc/apt/keyrings/scbrown-stack.gpg] https://scbrown.github.io/apt stable main" \
-     | sudo tee /etc/apt/sources.list.d/scbrown-stack.list \
-  && sudo apt update && sudo apt install desire-path
+```sh
+curl -fsSL https://raw.githubusercontent.com/scbrown/desire-path/main/install.sh | sh
 ```
 
-`apt upgrade` then picks up new releases. unattended-upgrades only installs
-from origins it allows, so to have it upgrade desire-path too, add
-`"origin=scbrown,codename=stable";` to `Unattended-Upgrade::Origins-Pattern`.
-Channels, pinning and rollback:
-[scbrown/apt](https://github.com/scbrown/apt#channels-and-pinning).
+Python 3.9+, curl, and a Linux or macOS shell. Downloads the latest published archive, verifies SHA-256 and the executable
+version before publishing command links in `~/.local/bin`. Add it to `PATH`.
+The complete versioned bundle stays in `~/.local/lib/desire-path/TAG` for rollback.
+Published targets: Linux and macOS, x86_64 and arm64.
 
-Linux x86-64, pinned release with checksum verification:
+Set `STACK_INSTALL_ROOT` on the receiving shell for another prefix.
+Pinned releases, alternatives, configuration and removal are in the
+[installation and usage reference](docs/installation-reference.md).
 
-```bash
-mkdir -p /tmp/dp-install && cd /tmp/dp-install
-curl -fLO https://github.com/scbrown/desire-path/releases/download/v0.7.0/desire-path_0.7.0_linux_amd64.tar.gz
-curl -fLO https://github.com/scbrown/desire-path/releases/download/v0.7.0/checksums.txt
-sha256sum --check --ignore-missing checksums.txt
-tar -xzf desire-path_0.7.0_linux_amd64.tar.gz dp
-mkdir -p "$HOME/.local/bin" && install -m 755 dp "$HOME/.local/bin/dp"
-export PATH="$HOME/.local/bin:$PATH"
-dp version
-```
-
-Expected: `dp 0.7.0 (5ca33ba)`. If you see something else, check `command -v dp`.
-
-From source (Go 1.24+): `go install github.com/scbrown/desire-path/cmd/dp@v0.7.0`,
-then add `$(go env GOPATH)/bin` to PATH and run `dp version`.
-See [installation](https://scbrown.github.io/desire-path/getting-started.html) for macOS, Windows, and source-checkout builds.
-
-## First success in three commands
+## Try it
 
 Use a temporary database and one synthetic failed call; Python 3 formats the result:
 
@@ -87,56 +52,15 @@ read_file 1
 The failure became a queryable pattern without configuring an agent or touching your usual database.
 An optional-metrics diagnostic may also appear on stderr; see [troubleshooting](https://scbrown.github.io/desire-path/getting-started.html#troubleshooting).
 
-## On your own data
+## Next steps
 
-After your agent has recorded calls:
+- [Tambo](https://github.com/scbrown/tambo): guided stack installation and verification.
+- [Camayoc](https://github.com/scbrown/camayoc): governed memory and vocabulary.
+- [Detailed examples and agent setup](docs/installation-reference.md).
 
-| question | command |
-|---|---|
-| Which failures repeat? | `dp paths --top 5` |
-| What happened for this tool? | `dp inspect read_file` |
-| What tool might have been intended? | `dp similar read_file` |
-| How do I record the intended mapping? | `dp alias read_file Read` |
-| How do I export the failures? | `dp export --format json` |
+**Load this repository’s graph:** public repository-pendant assets have not yet been verified. When a release supplies the archive, checksum and provenance, follow the [verified import workflow](https://scbrown.github.io/quipu/sharing/index.html): extract the share directory and use `quipu import SHARE_DIR --db repository.db`. Import stages knowledge; ROOT stays unchanged.
 
-An alias records a mapping. Active interception is a separate [pave setup](https://scbrown.github.io/desire-path/commands/pave.html).
-See the [CLI reference](https://scbrown.github.io/desire-path/commands/) for flags and all commands.
-
-## Wire it into your agent
-
-For Claude Code, with `dp` on the agent's PATH:
-
-```bash
-dp init --source claude-code
-dp sources
-```
-
-The installer merges hooks into `~/.claude/settings.json`. It installs ingestion
-for successes and failures, plus signposting and correction hooks. Review that
-file after installation. [Using agents](https://scbrown.github.io/desire-path/integrations/)
-explains the installed hooks and the Codex, Cursor, and Kiro source plugins.
-
-## Before you start
-
-| requirement | support |
-|---|---|
-| Release archives | Linux, macOS, Windows; amd64 and arm64 |
-| Source build | Go 1.24+; no CGo required |
-| README demo | Bash-compatible shell and Python 3 |
-| Local storage | SQLite at `~/.dp/desires.db`; override with `--db` |
-| Hook capture | A supported agent and `dp` on its PATH |
-
-Keep tool inputs and error messages in mind when sharing [exports](https://scbrown.github.io/desire-path/commands/export.html).
-
-## What's next
-
-- [Read the book](https://scbrown.github.io/desire-path/introduction.html)
-- [Find every design and reference document](https://scbrown.github.io/desire-path/docs-map.html)
-- [Configure capture for your agent](https://scbrown.github.io/desire-path/integrations/)
-
-## 🧺 The stack
-
-Caboodle installs these together and proves each one works; every tool also stands alone.
+## The stack
 
 <!-- stack-table:start -->
 
@@ -152,8 +76,8 @@ when.
 | [camayoc](https://github.com/scbrown/camayoc) | prepares knowledge and vocabulary for Quipu, with checks before it is admitted |
 | [quechua](https://github.com/scbrown/quechua) | shared vocabulary and shapes for interoperable knowledge |
 | [chaski](https://github.com/scbrown/chaski) | reacts to graph changes and delivers governed notifications |
-| [bobbin](https://github.com/scbrown/bobbin) | indexes your codebase and injects context from that index and Quipu knowledge |
-| [yupana](https://github.com/scbrown/yupana) | shows code impact and can read policies from Quipu to govern agent actions |
+| [bobbin](https://github.com/scbrown/bobbin) | searches your code and can include related knowledge from Quipu |
+| [yupana](https://github.com/scbrown/yupana) | shows code impact and can read policies from Quipu to check changes |
 | [desire-path](https://github.com/scbrown/desire-path) | turns agent mistakes into feature requests; works on its own without Quipu |
 | [seeds](https://github.com/scbrown/seeds) | a work item tracker backed by the Quipu knowledge base |
 | [shantytown](https://github.com/scbrown/shantytown) | runs crews of AI agents on work items, triggered by hand, on a schedule or by events; can share work and memory through Quipu |

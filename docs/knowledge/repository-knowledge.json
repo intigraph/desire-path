@@ -8,7 +8,7 @@
       "source": "README.md",
       "subject": "http://aegis.gastown.local/ontology/doc/desire-path/README.md",
       "summary": "Desire Path records tool-call failures, groups repeated desires and records mappings to real tool names. An alias records a mapping; active interception has separate setup.",
-      "source_sha256": "eb133a1842d47e1e64c5e6340479c0f39ec2bf58ef2f0ba3e5784e7082370d1e",
+      "source_sha256": "02ecab7b213451577521843dabc159c85a7e6bcd6e88f5d1fe0cbdaf82a4c51e",
       "type": "Concept"
     },
     {
@@ -83,7 +83,7 @@
       "source": "README.md",
       "subject": "http://aegis.gastown.local/ontology/doc/desire-path/README.md",
       "summary": "Start with the temporary-database failed-call example before installing agent hooks or sharing exports.",
-      "source_sha256": "eb133a1842d47e1e64c5e6340479c0f39ec2bf58ef2f0ba3e5784e7082370d1e",
+      "source_sha256": "02ecab7b213451577521843dabc159c85a7e6bcd6e88f5d1fe0cbdaf82a4c51e",
       "properties": {
         "startHereOrder": 1,
         "glossaryTerm": "https://scbrown.github.io/quechua/ns#Tool"
