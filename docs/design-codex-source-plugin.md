@@ -5,6 +5,28 @@
 **Date:** 2026-02-09
 **Status:** Draft
 
+## Current integration
+
+The February design below is retained as historical context. Native Codex Stop
+hooks now supply JSON on stdin, and are dp's preferred turn-ingestion path.
+`dp init --source codex` installs `dp ingest --source codex` under `hooks.Stop`;
+`dp hooks bundle` declares the same Codex-only hook without `codex_notify`.
+Installation retires only dp's exact former notify argv, preserving unrelated
+notify commands and hooks. An argv wrapper cannot cure the old failure: a turn
+over the host's single-argument limit fails before the wrapper starts.
+
+Stop maps `session_id` to the invocation's instance ID, carries `cwd` and
+`turn_id` metadata, and records the existing `agent_turn` tool name. It does not
+read `transcript_path` or retain assistant-message prose. Legacy notify JSON and
+`codex exec` item events remain accepted for existing integrations. Stop payloads
+must identify the session; unknown hook events and incorrectly typed identity
+fields are refused. `event_type` metadata distinguishes Stop from legacy notify.
+
+On managed hosts, update the registered bundle from the released installer and
+let normal provisioning regenerate Codex settings. Updating the dp executable
+alone does not migrate a stale registered bundle. Verify actual registration and
+natural ingestion separately; do not edit a running harness's config by hand.
+
 ## Executive Summary
 
 OpenAI Codex CLI lacks Claude Code-style per-tool-invocation hooks. The only

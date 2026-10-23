@@ -2,6 +2,7 @@ package source
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,8 +22,8 @@ func TestCodexDescription(t *testing.T) {
 	if got == "" {
 		t.Error("Description() should not be empty")
 	}
-	if got != "OpenAI Codex CLI notify hook and exec events" {
-		t.Errorf("Description() = %q, want %q", got, "OpenAI Codex CLI notify hook and exec events")
+	if got != "OpenAI Codex CLI Stop hook, legacy notify and exec events" {
+		t.Errorf("Description() = %q, want %q", got, "OpenAI Codex CLI Stop hook, legacy notify and exec events")
 	}
 }
 
@@ -309,8 +310,8 @@ func TestCodexInstall(t *testing.T) {
 	if !strings.Contains(content, "dp ingest") {
 		t.Errorf("config should contain dp ingest command, got:\n%s", content)
 	}
-	if !strings.Contains(content, "notify") {
-		t.Errorf("config should contain notify key, got:\n%s", content)
+	if !strings.Contains(content, "Stop") || strings.Contains(content, "notify") {
+		t.Errorf("expected Stop without notify, got:\n%s", content)
 	}
 }
 
@@ -387,13 +388,12 @@ notifications = true
 		}
 	}
 
-	// notify should be set.
-	if config["notify"] == nil {
-		t.Error("notify should be set after install")
+	if !codexStopInstalled(config) {
+		t.Error("Stop hook should be installed")
 	}
 }
 
-func TestCodexInstallExistingNotifyErrors(t *testing.T) {
+func TestCodexInstallPreservesForeignNotify(t *testing.T) {
 	dir := t.TempDir()
 	codexDir := filepath.Join(dir, ".codex")
 	if err := os.MkdirAll(codexDir, 0o700); err != nil {
@@ -409,13 +409,18 @@ func TestCodexInstallExistingNotifyErrors(t *testing.T) {
 	}
 
 	c := &codexCLI{}
-	err := c.Install(InstallOpts{SettingsPath: configPath})
-	if err == nil {
-		t.Fatal("expected error when existing notify is configured")
+	if err := c.Install(InstallOpts{SettingsPath: configPath}); err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(err.Error(), "existing notify configuration") {
-		t.Errorf("error = %q, should mention existing notify configuration", err.Error())
+	cfg, err := readCodexConfig(configPath)
+	if err != nil {
+		t.Fatal(err)
 	}
+	notify := cfg["notify"].([]interface{})
+	if len(notify) != 2 || notify[0] != "python3" || notify[1] != "/path/to/custom-notify.py" || !codexStopInstalled(cfg) {
+		t.Fatalf("foreign config changed: %v", cfg)
+	}
+
 }
 
 func TestCodexIsInstalledNoFile(t *testing.T) {
@@ -485,4 +490,113 @@ func TestCodexIsInstalledOtherNotifyOnly(t *testing.T) {
 
 func TestCodexImplementsInstaller(t *testing.T) {
 	var _ Installer = &codexCLI{}
+}
+
+// Stop hooks stream their payload instead of appending the whole turn to argv.
+func TestCodexStopHook(t *testing.T) {
+	c := &codexCLI{}
+	raw := `{"hook_event_name":"Stop","session_id":"session-123","cwd":"/fixture/project","turn_id":"turn-1","last_assistant_message":"` + strings.Repeat("x", 256*1024) + `"}`
+	f, err := c.Extract([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.ToolName != "agent_turn" || f.InstanceID != "session-123" || f.CWD != "/fixture/project" {
+		t.Fatalf("wrong identity: %+v", f)
+	}
+	if string(f.Extra["turn_id"]) != `"turn-1"` {
+		t.Fatalf("turn_id lost: %v", f.Extra)
+	}
+	if _, ok := f.Extra["last_assistant_message"]; ok {
+		t.Fatal("Stop retained assistant prose")
+	}
+	legacy, err := c.Extract([]byte(`{"type":"agent-turn-complete","thread-id":"session-123","cwd":"/fixture/project","turn-id":"turn-1"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if legacy.ToolName != f.ToolName || legacy.InstanceID != f.InstanceID || legacy.CWD != f.CWD || string(legacy.Extra["turn-id"]) != string(f.Extra["turn_id"]) {
+		t.Fatal("Stop/notify record identity differs")
+	}
+}
+
+func TestCodexStopHookRefusesInvalidMetadata(t *testing.T) {
+	for _, raw := range []string{
+		`{"hook_event_name":"PreToolUse","session_id":"s"}`,
+		`{"hook_event_name":4,"session_id":"s"}`,
+		`{"hook_event_name":"Stop"}`,
+		`{"hook_event_name":"Stop","session_id":""}`,
+		`{"hook_event_name":"Stop","session_id":3}`,
+		`{"hook_event_name":"Stop","session_id":null}`,
+		`{"hook_event_name":"Stop","session_id":"s","cwd":null}`,
+		`{"hook_event_name":"Stop","session_id":"s","turn_id":null}`,
+		`{"hook_event_name":"Stop","session_id":"s","cwd":3}`,
+		`{"hook_event_name":"Stop","session_id":"s","turn_id":3}`,
+	} {
+		if _, err := (&codexCLI{}).Extract([]byte(raw)); err == nil {
+			t.Errorf("accepted malformed Stop: %s", raw)
+		}
+	}
+}
+
+func TestCodexInstallMigratesOnlyExactLegacyNotify(t *testing.T) {
+	for _, exact := range []bool{true, false} {
+		t.Run(fmt.Sprint(exact), func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "config.toml")
+			argv := make([]interface{}, len(dpCodexNotifyScript))
+			for i, value := range dpCodexNotifyScript {
+				argv[i] = value
+			}
+			if !exact {
+				argv[2] = dpCodexNotifyCommand + " ; other-hook"
+			}
+			cfg := map[string]interface{}{"notify": argv, "model": "preserved", "hooks": map[string]interface{}{"Stop": []interface{}{map[string]interface{}{"hooks": []interface{}{map[string]interface{}{"type": "command", "command": "other hook"}}}}}}
+			if err := writeCodexConfig(path, cfg); err != nil {
+				t.Fatal(err)
+			}
+			c := &codexCLI{}
+			if installed, err := c.IsInstalled(dir); err != nil || installed {
+				t.Fatalf("legacy should not be current: %v/%v", installed, err)
+			}
+			if err := c.Install(InstallOpts{SettingsPath: path}); err != nil {
+				t.Fatal(err)
+			}
+			data, _ := os.ReadFile(path)
+			if err := c.Install(InstallOpts{SettingsPath: path}); err != nil {
+				t.Fatal(err)
+			}
+			after, _ := os.ReadFile(path)
+			if string(data) != string(after) {
+				t.Fatal("install not idempotent")
+			}
+			cfg, err := readCodexConfig(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, present := cfg["notify"]
+			if present == exact {
+				t.Fatalf("wrong notify migration: %v", cfg)
+			}
+			if !strings.Contains(string(after), "other hook") || cfg["model"] != "preserved" {
+				t.Fatal("foreign hook/key lost")
+			}
+			if installed, err := c.IsInstalled(dir); err != nil || !installed {
+				t.Fatalf("Stop not current: %v/%v", installed, err)
+			}
+		})
+	}
+}
+
+func TestCodexInstallMalformedHooksLeavesConfigUntouched(t *testing.T) {
+	for _, raw := range []string{`hooks = "foreign"`, `[hooks]
+Stop = "foreign"`} {
+		path := filepath.Join(t.TempDir(), "config.toml")
+		os.WriteFile(path, []byte(raw), 0600)
+		if err := (&codexCLI{}).Install(InstallOpts{SettingsPath: path}); err == nil {
+			t.Fatal("accepted malformed hooks")
+		}
+		after, _ := os.ReadFile(path)
+		if string(after) != raw {
+			t.Fatal("modified refused config")
+		}
+	}
 }

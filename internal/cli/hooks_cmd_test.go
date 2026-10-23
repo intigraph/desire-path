@@ -15,8 +15,17 @@ func TestHookBundleIsDPsOwn(t *testing.T) {
 	if len(bundleHooksFor(b, "claude")) != 9 {
 		t.Fatalf("claude hooks = %d, want the full set of 9", len(bundleHooksFor(b, "claude")))
 	}
-	if len(bundleHooksFor(b, "codex")) == 0 || len(notifyArgv(b)) == 0 {
-		t.Fatal("codex hooks and notify must be declared")
+	if len(notifyArgv(b)) != 0 {
+		t.Fatal("notify payload would cross argv")
+	}
+	stops := 0
+	for _, h := range bundleHooksFor(b, "codex") {
+		if h.event == "Stop" && h.command == "dp ingest --source codex" && h.matcher == "" {
+			stops++
+		}
+	}
+	if stops != 1 {
+		t.Fatalf("native Stop hook count=%d", stops)
 	}
 }
 
@@ -109,7 +118,7 @@ func TestNotifyComparesArgvBoundaries(t *testing.T) {
 }
 
 func TestNotifyStateNeverTakesOrDropsAForeignSlot(t *testing.T) {
-	b := HookBundle()
+	b := map[string]any{"codex_notify": []any{"legacy", "notify"}}
 	ours := notifyArgv(b)
 	// A foreign argv that Sprint-formats like ours would have fooled the old check.
 	var joined []string
@@ -129,5 +138,40 @@ func TestNotifyStateNeverTakesOrDropsAForeignSlot(t *testing.T) {
 	}
 	if notifyState(map[string]any{"notify": []any{"other-tool", "notify"}}, b) != "foreign" {
 		t.Fatal("other tool's notify not foreign")
+	}
+}
+
+func TestCodexStandaloneInstallRetiresOnlyLegacyNotify(t *testing.T) {
+	oldHarness, oldNoST, oldProject := hooksHarness, hooksNoST, hooksProject
+	defer func() { hooksHarness, hooksNoST, hooksProject = oldHarness, oldNoST, oldProject }()
+	hooksHarness, hooksNoST, hooksProject = []string{"codex"}, true, false
+	for _, exact := range []bool{true, false} {
+		dir := t.TempDir()
+		t.Setenv("CODEX_HOME", dir)
+		argv := []any{"bash", "-c", `printf '%s' "$1" | dp ingest --source codex`, "--"}
+		if !exact {
+			argv[2] = "another-tool hook"
+		}
+		cfg := map[string]any{"notify": argv, "model": "preserved"}
+		path := filepath.Join(dir, "config.toml")
+		if err := writeHooksConfig(path, "codex", cfg); err != nil {
+			t.Fatal(err)
+		}
+		if err := runHooks("install"); err != nil {
+			t.Fatal(err)
+		}
+		back, err := readHooksConfig(path, "codex")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, present := back["notify"]; present == exact {
+			t.Fatalf("wrong notify custody: %v", back)
+		}
+		if have, want := presentHooks(back, HookBundle(), "codex"); have != want || want == 0 {
+			t.Fatal("Stop not installed")
+		}
+		if back["model"] != "preserved" {
+			t.Fatal("foreign key lost")
+		}
 	}
 }

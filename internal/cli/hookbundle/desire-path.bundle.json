@@ -90,12 +90,13 @@
    "harnesses": [
     "claude"
    ]
+  },
+  {
+   "event": "Stop",
+   "command": "dp ingest --source codex",
+   "harnesses": [
+    "codex"
+   ]
   }
- ],
- "codex_notify": [
-  "bash",
-  "-c",
-  "printf '%s' \"$1\" | dp ingest --source codex",
-  "--"
  ]
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 )
@@ -27,13 +26,16 @@ func init() {
 func (c *codexCLI) Name() string { return "codex" }
 
 // Description returns a short human-readable description of this source.
-func (c *codexCLI) Description() string { return "OpenAI Codex CLI notify hook and exec events" }
+func (c *codexCLI) Description() string {
+	return "OpenAI Codex CLI Stop hook, legacy notify and exec events"
+}
 
 // Extract parses Codex CLI JSON and maps fields to the universal Fields struct.
-// It handles two formats:
+// It handles three formats:
 //
-//  1. Notify hook payload: {"type":"agent-turn-complete","thread-id":"...","cwd":"..."}
-//  2. Item event from codex exec --json: {"type":"item.completed","item":{"type":"command_execution",...}}
+//  1. Native Stop hook: {"hook_event_name":"Stop","session_id":"...","turn_id":"..."}
+//  2. Notify hook payload: {"type":"agent-turn-complete","thread-id":"...","cwd":"..."}
+//  3. Item event from codex exec --json: {"type":"item.completed","item":{"type":"command_execution",...}}
 //
 // For notify payloads, ToolName is set to "agent_turn" (a synthetic tool name).
 // For item events, ToolName is set to the item's type (e.g., "command_execution").
@@ -41,6 +43,15 @@ func (c *codexCLI) Extract(raw []byte) (*Fields, error) {
 	var m map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &m); err != nil {
 		return nil, fmt.Errorf("codex: parsing JSON: %w", err)
+	}
+
+	// Native hooks deliver JSON on stdin, without notify's argv size limit.
+	if hook, ok := m["hook_event_name"]; ok {
+		var event string
+		if err := json.Unmarshal(hook, &event); err != nil || event != "Stop" {
+			return nil, fmt.Errorf("codex: unsupported hook_event_name (expected Stop)")
+		}
+		return c.extractStop(m)
 	}
 
 	// Detect format by "type" field.
@@ -66,6 +77,37 @@ func (c *codexCLI) Extract(raw []byte) (*Fields, error) {
 	}
 
 	return nil, fmt.Errorf("codex: unsupported event type: %q", eventType)
+}
+
+// extractStop records turn identity, not assistant prose or transcript contents.
+// The legacy notify parser below remains compatible with existing producers.
+func (c *codexCLI) extractStop(m map[string]json.RawMessage) (*Fields, error) {
+	f := &Fields{ToolName: "agent_turn", Extra: map[string]json.RawMessage{"event_type": json.RawMessage(`"Stop"`)}}
+	for _, key := range []string{"session_id", "cwd", "turn_id"} {
+		raw, ok := m[key]
+		if !ok {
+			if key == "session_id" {
+				return nil, fmt.Errorf("codex: Stop missing required field: session_id")
+			}
+			continue
+		}
+		var value *string
+		if err := json.Unmarshal(raw, &value); err != nil || value == nil {
+			return nil, fmt.Errorf("codex: Stop %s must be a string", key)
+		}
+		switch key {
+		case "session_id":
+			if *value == "" {
+				return nil, fmt.Errorf("codex: Stop missing required field: session_id")
+			}
+			f.InstanceID = *value
+		case "cwd":
+			f.CWD = *value
+		case "turn_id":
+			f.Extra[key] = raw
+		}
+	}
+	return f, nil
 }
 
 // extractNotify handles the Codex notify hook payload format.
@@ -170,17 +212,15 @@ func (c *codexCLI) extractItem(m map[string]json.RawMessage, eventType string) (
 	return &f, nil
 }
 
-// dpCodexNotifyCommand is the shell script command installed as the notify hook.
-// Codex passes the JSON payload as a single CLI argument to the notify command,
-// so we use a shell wrapper to pipe it to dp ingest on stdin.
+// dpCodexNotifyCommand is the retired argv signature, retained only to identify
+// the exact old dp-owned notify command during migration. It is never installed.
 const dpCodexNotifyCommand = `printf '%s' "$1" | dp ingest --source codex`
 
-// dpCodexNotifyScript is the full notify config value: a bash invocation that
-// passes the argument to dp ingest.
+// dpCodexNotifyScript retains the old complete argv, including its boundaries.
 var dpCodexNotifyScript = []string{"bash", "-c", dpCodexNotifyCommand, "--"}
 
-// Install configures the Codex CLI notify hook. It modifies ~/.codex/config.toml
-// to add a notify entry that pipes the turn-complete JSON to dp ingest.
+// Install configures the native Codex Stop stdin hook in ~/.codex/config.toml.
+// Only the exact legacy dp notify argv is retired; foreign configuration stays.
 func (c *codexCLI) Install(opts InstallOpts) error {
 	configPath := opts.SettingsPath
 	if configPath == "" {
@@ -190,10 +230,11 @@ func (c *codexCLI) Install(opts InstallOpts) error {
 		}
 		configPath = filepath.Join(home, ".codex", "config.toml")
 	}
-	return installCodexNotify(configPath)
+	return installCodexStop(configPath)
 }
 
-// IsInstalled checks whether a dp notify hook is already configured in the
+// IsInstalled checks whether the native Stop hook is configured without the
+// exact retired dp notify command in the
 // Codex CLI config file. configDir should point to the directory containing
 // config.toml (e.g., ~/.codex).
 func (c *codexCLI) IsInstalled(configDir string) (bool, error) {
@@ -211,43 +252,72 @@ func (c *codexCLI) IsInstalled(configDir string) (bool, error) {
 		return false, err
 	}
 
-	notify, ok := config["notify"]
-	if !ok {
-		return false, nil
-	}
-
-	// notify should be an array of strings.
-	notifyArr, ok := notify.([]interface{})
-	if !ok {
-		return false, nil
-	}
-
-	return codexNotifyHasDPCommand(notifyArr), nil
+	return codexStopInstalled(config) && !legacyCodexNotify(config["notify"]), nil
 }
 
-// installCodexNotify performs the Codex CLI setup using the given config path.
-func installCodexNotify(configPath string) error {
+// legacyCodexNotify recognizes only the exact argv previously installed by dp.
+func legacyCodexNotify(raw any) bool {
+	arr, ok := raw.([]interface{})
+	if !ok || len(arr) != len(dpCodexNotifyScript) {
+		return false
+	}
+	for i, want := range dpCodexNotifyScript {
+		if arr[i] != want {
+			return false
+		}
+	}
+	return true
+}
+
+func codexStopInstalled(config map[string]interface{}) bool {
+	hooks, _ := config["hooks"].(map[string]interface{})
+	groups, _ := hooks["Stop"].([]interface{})
+	for _, raw := range groups {
+		group, _ := raw.(map[string]interface{})
+		// A matcher must not narrow this once-per-turn event.
+		if matcher, exists := group["matcher"]; exists && matcher != "" {
+			continue
+		}
+		commands, _ := group["hooks"].([]interface{})
+		for _, raw := range commands {
+			command, _ := raw.(map[string]interface{})
+			if command["type"] == "command" && command["command"] == "dp ingest --source codex" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func installCodexStop(configPath string) error {
 	config, err := readCodexConfig(configPath)
 	if err != nil {
 		return err
 	}
-
-	// Check if already installed.
-	if existing, ok := config["notify"]; ok {
-		if arr, ok := existing.([]interface{}); ok {
-			if codexNotifyHasDPCommand(arr) {
-				return nil // Already installed.
-			}
+	hooks, ok := config["hooks"].(map[string]interface{})
+	if !ok {
+		if _, exists := config["hooks"]; exists {
+			return fmt.Errorf("codex: hooks must be a table")
 		}
-		// A non-dp notify is already configured. Codex only supports a single
-		// notify command, so we can't just append. Return an error.
-		return fmt.Errorf("codex: existing notify configuration found; "+
-			"Codex supports only one notify command. Please manually update %s "+
-			"to include dp ingest", configPath)
+		hooks = map[string]interface{}{}
+		config["hooks"] = hooks
 	}
-
-	config["notify"] = dpCodexNotifyScript
-
+	groups, ok := hooks["Stop"].([]interface{})
+	if !ok && hooks["Stop"] != nil {
+		return fmt.Errorf("codex: hooks.Stop must be an array")
+	}
+	changed := false
+	if !codexStopInstalled(config) {
+		hooks["Stop"] = append(groups, map[string]interface{}{"hooks": []interface{}{map[string]interface{}{"type": "command", "command": "dp ingest --source codex"}}})
+		changed = true
+	}
+	if legacyCodexNotify(config["notify"]) {
+		delete(config, "notify")
+		changed = true
+	}
+	if !changed {
+		return nil
+	}
 	return writeCodexConfig(configPath, config)
 }
 
@@ -286,18 +356,4 @@ func writeCodexConfig(path string, config map[string]interface{}) error {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
-}
-
-// codexNotifyHasDPCommand checks if a notify array contains a dp ingest command.
-func codexNotifyHasDPCommand(arr []interface{}) bool {
-	for _, v := range arr {
-		s, ok := v.(string)
-		if !ok {
-			continue
-		}
-		if strings.Contains(s, "dp ingest") || strings.Contains(s, "dp record") {
-			return true
-		}
-	}
-	return false
 }
