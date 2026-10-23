@@ -1,4 +1,17 @@
-# desire-path
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
+    <img alt="Desire Path" src="docs/assets/banner-dark.svg" width="660">
+  </picture>
+</p>
+<h1 align="center">Desire Path</h1>
+<p align="center"><em>👣 Find the tool calls your agents get wrong, and turn repeats into fixes.</em></p>
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache-2.0"></a>
+  <a href="https://github.com/scbrown/desire-path/actions/workflows/ci.yml"><img src="https://github.com/scbrown/desire-path/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/scbrown/caboodle"><img src="https://img.shields.io/badge/stack-quipu-8B5E3C.svg" alt="Quipu stack"></a>
+</p>
 
 **Desire Path (`dp`) is a CLI and a set of agent hooks for developers who want
 fewer repeated tool-call failures. It stores calls locally, ranks recurring
@@ -73,4 +86,37 @@ when.
 
 <!-- stack-table:end -->
 
-[License](LICENSE).
+## Contributing
+
+From a checkout, with [just](https://github.com/casey/just), Go, Python 3,
+pre-commit, and mdBook installed:
+
+```bash
+just build
+just test
+just check
+```
+
+See the [development guide](book/src/development/contributing.md).
+
+## 📜 License
+
+[Apache-2.0](LICENSE).
+
+Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --max-records 10000 --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
+
+`--max-records` defaults to 10000 and accepts 1 through 100000. The store query
+loads at most the cap plus one sentinel; overflow returns an error without partial
+counts. Future records after `--until` conservatively consume this candidate cap
+because the existing store selector bounds only `--since`. JSON also identifies
+the exact `since`/`until`, `max_records`, `input_records` and `complete: true`.
+Complete means the candidate inventory fit the cap, not that normalization or
+failure capture was complete: consumers must still inspect `unknown` and
+`excluded`. A record cap bounds materialized rows, not total input bytes or query
+latency. Prefer one current window for scheduled threshold evaluation; a historical
+report requires its own bounded read-cost admission.
+
+Local `failure-families` reads require an existing database at the current schema
+version. The command opens it read-only: missing databases and schema mismatches
+return an error without creating a store or migrating it. Configured remote
+stores continue to use their existing read API.
