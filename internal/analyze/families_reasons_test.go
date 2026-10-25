@@ -42,6 +42,7 @@ func TestFamilyReasonAccountingDistinguishesUnsupportedKinds(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Logf("sanitized report: %s", data)
 			var decoded struct {
 				Unknown  map[string]int `json:"unknown_by_reason"`
 				Excluded map[string]int `json:"excluded_by_reason"`
