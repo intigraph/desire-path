@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/intigraph/desire-path/compare/v0.10.0...v0.10.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* report sanitized failure-family reason counts ([07f9b88](https://github.com/intigraph/desire-path/commit/07f9b88aef964aa2bfb6c543a34cbd8b2591f857))
+
 ## [0.10.0](https://github.com/intigraph/desire-path/compare/v0.9.0...v0.10.0) (2026-10-23)
 
 
