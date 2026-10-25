@@ -1,0 +1,3 @@
+Retained source fixture output at base ca82165, before fix:
+families_reasons_test.go:53: missing or incorrect reason counts: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600}
+families_reasons_test.go:53: missing or incorrect reason counts: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600}

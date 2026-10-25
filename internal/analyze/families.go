@@ -30,6 +30,9 @@ type FamilyReport struct {
 	Unknown       int             `json:"unknown"`
 	Excluded      int             `json:"excluded"`
 	WindowSeconds int64           `json:"window_seconds"`
+	// Fixed branch names only; no tool names, input text or errors enter keys.
+	UnknownByReason  map[string]int `json:"unknown_by_reason,omitempty"`
+	ExcludedByReason map[string]int `json:"excluded_by_reason,omitempty"`
 }
 
 var familyName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_.-]{0,63}$`)
@@ -150,16 +153,21 @@ func CommandProgram(raw json.RawMessage) (string, bool) {
 // an inferred failing subcommand. Arguments, paths, errors and credentials are
 // excluded from identity. Unsupported execution wrappers remain UNKNOWN.
 func AggregateFailureFamilies(desires []model.Desire, window time.Duration, end time.Time) FamilyReport {
-	r := FamilyReport{Families: []FailureFamily{}, WindowSeconds: int64(window / time.Second)}
+	r := FamilyReport{
+		Families: []FailureFamily{}, WindowSeconds: int64(window / time.Second),
+		UnknownByReason: map[string]int{}, ExcludedByReason: map[string]int{},
+	}
 	groups := map[string][]time.Time{}
 	info := map[string]FailureFamily{}
 	for _, d := range desires {
 		if d.Category == model.CategoryTurnPattern {
 			r.Excluded++
+			r.ExcludedByReason["turn_pattern"]++
 			continue
 		}
 		if !familyTool.MatchString(d.ToolName) {
 			r.Unknown++
+			r.UnknownByReason["invalid_tool_name"]++
 			continue
 		}
 		shape := d.ToolName
@@ -168,6 +176,7 @@ func AggregateFailureFamilies(desires []model.Desire, window time.Duration, end 
 			shape, ok = commandShape(d.ToolInput)
 			if !ok {
 				r.Unknown++
+				r.UnknownByReason["unsupported_command_shape"]++
 				continue
 			}
 		}

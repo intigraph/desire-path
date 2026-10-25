@@ -1,0 +1,20 @@
+Script started on 2026-10-25 08:20:19-04:00 [COMMAND="[private fixture launcher redacted]" <not executed on terminal>]
+Retained source fixture output at base ca82165, before fix:
+families_reasons_test.go:53: missing or incorrect reason counts: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600}
+families_reasons_test.go:53: missing or incorrect reason counts: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600}
+
+Candidate source, same fixture assertions:
+=== RUN   TestFamilyReasonAccountingDistinguishesUnsupportedKinds
+=== RUN   TestFamilyReasonAccountingDistinguishesUnsupportedKinds/tool_name
+    families_reasons_test.go:45: sanitized report: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600,"unknown_by_reason":{"invalid_tool_name":3},"excluded_by_reason":{"turn_pattern":2}}
+=== RUN   TestFamilyReasonAccountingDistinguishesUnsupportedKinds/command_shape
+    families_reasons_test.go:45: sanitized report: {"families":[{"id":"d6adb6ead2d4d8b999c740010bf75fbc11195fac1ac9e4a5e5fc8c931d9b9664","tool":"Bash","class":"exit-1","count":1,"peak_window":1,"current_window":1}],"unknown":3,"excluded":2,"window_seconds":3600,"unknown_by_reason":{"unsupported_command_shape":3},"excluded_by_reason":{"turn_pattern":2}}
+--- PASS: TestFamilyReasonAccountingDistinguishesUnsupportedKinds (0.00s)
+    --- PASS: TestFamilyReasonAccountingDistinguishesUnsupportedKinds/tool_name (0.00s)
+    --- PASS: TestFamilyReasonAccountingDistinguishesUnsupportedKinds/command_shape (0.00s)
+=== RUN   TestFamilyReasonAccountingOmitsEmptyDiagnostics
+--- PASS: TestFamilyReasonAccountingOmitsEmptyDiagnostics (0.00s)
+PASS
+ok  	github.com/scbrown/desire-path/internal/analyze	0.008s
+
+Script done on 2026-10-25 08:20:22-04:00 [COMMAND_EXIT_CODE="0"]
