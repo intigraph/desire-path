@@ -112,7 +112,12 @@ because the existing store selector bounds only `--since`. JSON also identifies
 the exact `since`/`until`, `max_records`, `input_records` and `complete: true`.
 Complete means the candidate inventory fit the cap, not that normalization or
 failure capture was complete: consumers must still inspect `unknown` and
-`excluded`. A record cap bounds materialized rows, not total input bytes or query
+`excluded`. Nonzero counts also include fixed-key `unknown_by_reason`
+(`invalid_tool_name`, `unsupported_command_shape`) and `excluded_by_reason`
+(`turn_pattern`) maps. These are coarse parser branches, not individual commands
+or a reason to treat unsupported records as normalized. Older reports omit them;
+their unsupported kinds cannot be recovered from aggregate totals alone.
+A record cap bounds materialized rows, not total input bytes or query
 latency. Prefer one current window for scheduled threshold evaluation; a historical
 report requires its own bounded read-cost admission.
 
