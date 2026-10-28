@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +14,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 func TestPrimeGeneratedCopiesCurrent(t *testing.T) {
@@ -41,7 +45,7 @@ func TestPrimeLocalMetadataNeverCreatesOrMutates(t *testing.T) {
 	path := filepath.Join(dir, "absent", "desires.db")
 	opts := primeOptions{configPath: filepath.Join(dir, "no-config.toml"), dbPath: path}
 	state := primeSummary(context.Background(), opts)
-	if state.Status != "unreachable" || state.Reason != "database_absent" {
+	if state.Status != "absent" || state.Summary.Reason != "database_absent" {
 		t.Fatalf("%+v", state)
 	}
 	if _, err := os.Stat(filepath.Dir(path)); !os.IsNotExist(err) {
@@ -60,7 +64,7 @@ func TestPrimeLocalMetadataNeverCreatesOrMutates(t *testing.T) {
 	after, _ := os.Stat(path)
 	content, _ := os.ReadFile(path)
 	entriesAfter, _ := os.ReadDir(dir)
-	if state.Status != "available" || state.Bytes != int64(len(original)) || state.TotalDesires != nil {
+	if state.Status != "ok" || state.Summary.Bytes != int64(len(original)) || state.Summary.TotalDesires != nil {
 		t.Fatalf("%+v", state)
 	}
 	if !bytes.Equal(content, original) || !before.ModTime().Equal(after.ModTime()) || len(entriesBefore) != len(entriesAfter) {
@@ -72,11 +76,11 @@ func TestPrimeLocalMetadataNeverCreatesOrMutates(t *testing.T) {
 		t.Fatal(err)
 	}
 	opts.configPath = cfg
-	if s := primeSummary(context.Background(), opts); s.Status != "unreachable" {
+	if s := primeSummary(context.Background(), opts); s.Status != "absent" {
 		t.Fatalf("config ignored: %+v", s)
 	}
 	opts.dbOverride = true
-	if s := primeSummary(context.Background(), opts); s.Status != "available" {
+	if s := primeSummary(context.Background(), opts); s.Status != "ok" {
 		t.Fatalf("override ignored: %+v", s)
 	}
 	opts.dbPath = dir
@@ -91,8 +95,8 @@ func TestPrimeRemoteBoundsAndResponseValidation(t *testing.T) {
 		code       int
 		want       string
 	}{
-		{"counts", `{"total_desires":7,"unique_paths":2,"tool_input":"private"}`, 200, "available"},
-		{"zero", `{"total_desires":0,"unique_paths":0}`, 200, "available"},
+		{"counts", `{"total_desires":7,"unique_paths":2,"tool_input":"private"}`, 200, "ok"},
+		{"zero", `{"total_desires":0,"unique_paths":0}`, 200, "ok"},
 		{"missing", `{}`, 200, "unreadable"},
 		{"negative", `{"total_desires":-1,"unique_paths":0}`, 200, "unreadable"},
 		{"inconsistent", `{"total_desires":1,"unique_paths":2}`, 200, "unreadable"},
@@ -140,60 +144,154 @@ func TestPrimeRemoteBoundsAndResponseValidation(t *testing.T) {
 		}
 		started := time.Now()
 		state := primeSummary(context.Background(), primeOptions{configPath: cfg})
-		if time.Since(started) >= time.Second || state.Status != "unreachable" {
+		if time.Since(started) >= time.Second || state.Status != "partial" || state.ElapsedMS < 0 || state.ElapsedMS >= 1000 {
 			t.Fatalf("deadline failed: %+v %s", state, time.Since(started))
 		}
 	})
 }
 
-func TestPrimeStaticCLIAndFormats(t *testing.T) {
-	// Save global Cobra state because existing CLI tests reuse the same root.
+// primeTestRoot isolates Cobra flags from the reused global command tree.
+func primeTestRoot(t *testing.T) *cobra.Command {
+	t.Helper()
 	oldDB, oldJSON, oldConfig := dbPath, jsonOutput, configPath
-	oldOut := rootCmd.OutOrStdout()
-	t.Cleanup(func() {
-		dbPath, jsonOutput, configPath = oldDB, oldJSON, oldConfig
-		rootCmd.SetOut(oldOut)
-		rootCmd.SetArgs(nil)
-		cmd, _, _ := rootCmd.Find([]string{"prime"})
-		_ = cmd.Flags().Set("static", "false")
-		_ = cmd.Flags().Set("brief", "false")
-		for _, name := range []string{"static", "brief", "db", "json"} {
-			if f := cmd.Flags().Lookup(name); f != nil {
-				f.Changed = false
+	t.Cleanup(func() { dbPath, jsonOutput, configPath = oldDB, oldJSON, oldConfig })
+	configPath = filepath.Join(t.TempDir(), "missing-config.toml")
+	root := &cobra.Command{Use: "dp", SilenceErrors: true, SilenceUsage: true}
+	root.PersistentFlags().StringVar(&dbPath, "db", defaultDBPath(), "database")
+	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON")
+	root.AddCommand(newPrimeCommand())
+	return root
+}
+
+func TestPrimeCLIContractFormatsSectionsAndUsage(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+		code int
+	}{
+		{"missing", []string{"--json"}, 0},
+		{"static_json", []string{"--static", "--json"}, 0},
+		{"brief_json", []string{"--brief", "--json"}, 0},
+		{"brief", []string{"--brief"}, 0},
+		{"brief_static", []string{"--brief", "--static"}, 0},
+		{"section", []string{"--section", "cOrE", "--static"}, 0},
+		{"unknown_section", []string{"--section", "nonexistent"}, 2},
+		{"bad_flag", []string{"--not-a-flag"}, 2},
+		{"extra_argument", []string{"extra"}, 2},
+		{"bad_combination", []string{"--brief", "--section", "core"}, 2},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("HOME", t.TempDir())
+			root := primeTestRoot(t)
+			var out bytes.Buffer
+			root.SetOut(&out)
+			root.SetErr(&out)
+			root.SetArgs(append([]string{"prime"}, tt.args...))
+			err := root.Execute()
+			if ExitCode(err) != tt.code {
+				t.Fatalf("exit=%d error=%v output=%s", ExitCode(err), err, out.String())
 			}
-		}
-	})
+			if tt.code != 0 {
+				if tt.name == "unknown_section" && !strings.Contains(err.Error(), "What dp is, Agent workflow, Core commands, MCP tools") {
+					t.Fatalf("no section list: %v", err)
+				}
+				return
+			}
+			text := out.String()
+			if strings.Contains(strings.Join(tt.args, " "), "--json") {
+				var obj map[string]json.RawMessage
+				if err := json.Unmarshal(out.Bytes(), &obj); err != nil {
+					t.Fatal(err)
+				}
+				for _, key := range []string{"schema", "tool", "version", "primer", "live", "status"} {
+					if _, ok := obj[key]; !ok {
+						t.Fatalf("missing %s: %s", key, text)
+					}
+				}
+				var live map[string]json.RawMessage
+				_ = json.Unmarshal(obj["live"], &live)
+				for _, key := range []string{"status", "elapsed_ms", "summary"} {
+					if _, ok := live[key]; !ok {
+						t.Fatalf("missing live.%s: %s", key, text)
+					}
+				}
+				var value primeOutput
+				if err := json.Unmarshal(out.Bytes(), &value); err != nil {
+					t.Fatal(err)
+				}
+				if value.Schema != "stack-prime/1" || value.Tool != "dp" || value.Version == "" || len(value.Primer.Sections) < 5 {
+					t.Fatalf("bad contract: %s", text)
+				}
+				var doc map[string]json.RawMessage
+				_ = json.Unmarshal(obj["primer"], &doc)
+				_, hasText := doc["text"]
+				if hasText == (tt.name == "brief_json") {
+					t.Fatalf("brief text presence wrong: %s", text)
+				}
+				if tt.name == "static_json" {
+					if value.Status != "ok" || value.Live.Status != "skipped" {
+						t.Fatalf("%s", text)
+					}
+				} else if value.Status != "degraded" || value.Live.Status != "absent" {
+					t.Fatalf("%s", text)
+				}
+			} else if strings.HasPrefix(tt.name, "brief") {
+				lines := strings.Split(strings.TrimSpace(text), "\n")
+				if len(lines) < 5 || len(lines) > 10 || !strings.HasPrefix(lines[0], "dp ") || lines[len(lines)-1] != "Run `dp prime` for the full primer." {
+					t.Fatalf("bad brief (%d): %s", len(lines), text)
+				}
+			} else if tt.name == "section" {
+				if !strings.HasPrefix(text, "## Core commands") || strings.Contains(text, "## MCP tools") || strings.Contains(text, "## Live state") {
+					t.Fatalf("bad selection: %s", text)
+				}
+			}
+		})
+	}
+	if ExitCode(errors.New("ordinary failure")) != 1 {
+		t.Fatal("changed other CLI exit codes")
+	}
+}
+
+func TestPrimeRefusedServerDiffersFromDeadline(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := listener.Addr().String()
+	if err := listener.Close(); err != nil {
+		t.Fatal(err)
+	}
 	dir := t.TempDir()
-	configPath = filepath.Join(dir, "broken.toml")
-	if err := os.WriteFile(configPath, []byte("[invalid"), 0600); err != nil {
+	cfg := filepath.Join(dir, "config.toml")
+	if err := os.WriteFile(cfg, []byte("store_mode = 'remote'\nremote_url = 'http://"+addr+"'\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	state := primeSummary(context.Background(), primeOptions{configPath: cfg})
+	if state.Status != "unreachable" || state.ElapsedMS >= 1000 || !strings.Contains(state.Summary.URL, addr) {
+		t.Fatalf("%+v", state)
+	}
+	// Credential-bearing URLs are refused and the display value is scrubbed.
+	state = primeRemoteState(context.Background(), "https://user:private@example.org/base?token=private#private")
+	data, _ := json.Marshal(state)
+	if state.Status != "unreadable" || bytes.Contains(data, []byte("private")) || bytes.Contains(data, []byte("user:")) {
+		t.Fatalf("%s", data)
+	}
+}
+
+func TestPrimePlainNamesTargetAndNextCommand(t *testing.T) {
+	root := primeTestRoot(t)
+	path := filepath.Join(t.TempDir(), "missing's.db")
 	var out bytes.Buffer
-	rootCmd.SetOut(&out)
-	rootCmd.SetArgs([]string{"prime", "--static", "--brief", "--json"})
-	if err := rootCmd.Execute(); err != nil {
+	root.SetOut(&out)
+	root.SetArgs([]string{"prime", "--db", path})
+	if err := root.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	var result struct {
-		Tool, Primer string
-		Live         primeState
-	}
-	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
-		t.Fatal(err)
-	}
-	if result.Tool != "dp" || result.Live.Status != "skipped" || strings.Contains(result.Primer, "## Core commands") {
+	if !strings.Contains(out.String(), "## Live state") || !strings.Contains(out.String(), path) || !strings.Contains(out.String(), "State: absent") || !strings.Contains(out.String(), "Next: dp --db ") {
 		t.Fatalf("%s", out.String())
 	}
-	out.Reset()
-	rootCmd.SetArgs([]string{"prime", "--static", "--brief=false", "--json=false"})
-	if err := rootCmd.Execute(); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out.String(), "## Core commands") || !strings.Contains(out.String(), "Live summary: skipped") {
-		t.Fatalf("%s", out.String())
-	}
-	entries, _ := os.ReadDir(dir)
-	if len(entries) != 1 {
-		t.Fatal("static command wrote state")
+	if !strings.Contains(primeShellQuote(path), "'\"'\"'") {
+		t.Fatal("path not shell-quoted")
 	}
 }
