@@ -125,3 +125,10 @@ Local `failure-families` reads require an existing database at the current schem
 version. The command opens it read-only: missing databases and schema mismatches
 return an error without creating a store or migrating it. Configured remote
 stores continue to use their existing read API.
+
+## Agent orientation
+
+Start with `dp prime` (`--brief`, `--json`, or `--static`). It reads existing
+state without initializing a database or installing hooks. See the
+[agent primer](docs/book/src/commands/prime.md) and
+[Desire Path skill](skills/desire-path/SKILL.md).
