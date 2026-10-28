@@ -314,3 +314,11 @@ Cross-platform releases are configured via `.goreleaser.yml` (linux, darwin, win
 ### Failure-family measurement
 
 `internal/analyze/families.go` uses `mvdan.cc/sh/v3/syntax` to parse shell program structure without executing it. This dependency is justified by compound commands, quoting, pipes and heredocs: token splitting cannot safely recover their command identities. The normalized identity excludes argument values and hashes the complete ordered program shape plus tool and bounded error class. Unsupported wrappers/dynamic commands remain explicitly UNKNOWN. The `failure-families` CLI requires explicit start/end timestamps; consumers must distinguish historical peak counts from current-window counts, and must disclose normalization/capture coverage.
+
+## Agent primer
+
+`internal/cli/primer.md` is embedded by `dp prime`. After editing it, run
+`python3 scripts/sync-primer.py` to regenerate the book and skill copies.
+`TestPrimeGeneratedCopiesCurrent` enforces equality in the existing unit-test CI.
+Prime uses a separate read-only bounded path: local file metadata, or one remote
+statistics GET. It must never initialize SQLite, migrate config, or install hooks.

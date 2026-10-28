@@ -24,6 +24,7 @@
 # Command Reference
 
 - [Overview](./commands/index.md)
+- [dp prime](./commands/prime.md)
 - [dp record](./commands/record.md)
 - [dp ingest](./commands/ingest.md)
 - [dp init](./commands/init.md)

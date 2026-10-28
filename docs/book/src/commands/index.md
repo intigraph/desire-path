@@ -11,6 +11,10 @@ Commands for capturing tool call data from AI coding tools.
 - **ingest** - Ingest tool call data from a source plugin
 - **init** - Set up integration with AI coding tools
 
+### Orientation
+
+- **[prime](prime.md)** - Agent primer and bounded read-only live state
+
 ### Query & Analyze
 Commands for exploring recorded desire paths.
 
@@ -37,6 +41,7 @@ Commands for managing configuration.
 
 | Command | Description |
 |---------|-------------|
+| prime | Agent primer and bounded read-only state |
 | record | Deprecated compatibility entrypoint; use ingest |
 | ingest | Ingest tool call data from a source plugin |
 | init | Set up integration with AI coding tools |
