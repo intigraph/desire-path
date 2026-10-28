@@ -6,50 +6,62 @@ description: Orient agents and inspect failed tool-call evidence with dp.
 <!-- BEGIN dp prime -->
 # Desire Path agent primer
 
-Desire Path (`dp`) records failed tool calls and turns repeated mistakes into
-searchable patterns, aliases and signposts. In the Quipu stack, Quipu remembers
-operational knowledge, Bobbin searches code, Yupana explains structure, and dp
-captures the capabilities agents expected to find.
+## What dp is
 
-## Workflow
+Desire Path (`dp`) records failed tool calls and reveals repeated mistakes.
+It turns that evidence into searchable patterns, aliases and signposts.
+In the Quipu stack, Quipu remembers knowledge, Bobbin searches code,
+Yupana explains structure, and dp captures capabilities agents expected.
 
-Query Quipu for prior decisions and incidents before acting. Use Bobbin for code
-search and Yupana for impact. Inspect dp's evidence before proposing an alias;
-a failed call is a signal, not authority to change infrastructure. Recording,
-initialization and alias updates are explicit writes. `dp prime` only reads.
+## Agent workflow
+
+1. Query Quipu for prior decisions and incidents before acting.
+2. Use Bobbin for code search and Yupana for impact.
+3. Inspect dp's recorded evidence before proposing an alias or correction.
+4. Make recording, initialization and alias changes explicitly; `dp prime` only reads.
 
 ## Core commands
 
-- `dp prime --brief`: short orientation and a bounded live summary.
-- `dp prime --json`: primer plus structured state for agents.
-- `dp prime --static`: orientation without reading configuration or live state.
-- `dp list --since 7d`: recent recorded failures.
-- `dp paths --top 10`: frequently requested tool names.
-- `dp inspect TOOL`: evidence for one recorded pattern.
-- `dp stats --invocations`: captured invocation statistics.
-- `dp similar TOOL`: similar known tool names.
-- `dp ingest --source claude-code`: record a supplied tool-call payload.
-- `dp alias FROM TO`: explicitly create a tool-name correction.
-- `dp init --source claude-code`: explicitly install recording integration.
+| Command | Use |
+| --- | --- |
+| `dp prime` | Full orientation followed by bounded read-only state |
+| `dp prime --brief` | Short orientation for stack aggregation |
+| `dp prime --json` | Structured `stack-prime/1` output for agents |
+| `dp prime --static` | Embedded guidance without config or state reads |
+| `dp prime --section core --static` | One section by case-insensitive heading prefix |
+| `dp list --since 7d` | Recent recorded failures |
+| `dp paths --top 10` | Frequently requested tool names |
+| `dp inspect TOOL` | Evidence for a recorded pattern |
+| `dp stats --invocations` | Captured invocation statistics |
+| `dp similar TOOL` | Similar known tool names |
+| `dp ingest --source claude-code` | Explicitly record a supplied payload |
+| `dp alias FROM TO` | Explicitly create a tool-name correction |
+| `dp init --source claude-code` | Explicitly install recording integration |
 
-The binary does not provide an MCP server; its CLI and hooks are the agent
-surfaces. Hook installation is separate from orientation.
+## MCP tools
 
-## Live summary
+None. The CLI and hooks are the agent surfaces. Hook installation is separate
+from orientation.
+
+## Reading live state
 
 The live read has a 650 ms deadline. Local mode reports only the configured
 existing database file's size and modification time; it never opens SQLite,
 creates sidecars, or migrates a schema. File metadata does not establish valid
 schema, row counts, capture coverage, or database health. Remote mode makes one
 GET to the configured server's `/api/v1/stats`, with no retries or redirects and
-a 64 KiB response cap. It reports only total desires and unique paths, not raw
-calls or tool inputs. Unreachable, unreadable and skipped states are explicit;
-the static primer remains usable. `--db` overrides the configured local path.
+a 64 KiB response cap. It reports only total desires and unique paths.
 
-## Further reading
+Status is `ok`, `partial` at the deadline, `absent`, `unreachable`, `unreadable`,
+or `skipped` with `--static`. JSON includes elapsed milliseconds and reports
+`degraded` for an incomplete live read; guidance remains usable and exit is 0.
+Plain live state names the path or credential-free URL and a next command.
+`--db` overrides the configured local path. Usage errors exit 2.
 
-- Book: https://scbrown.github.io/desire-path/
-- README: https://github.com/scbrown/desire-path#readme
-- Skill: https://github.com/scbrown/desire-path/blob/main/skills/desire-path/SKILL.md
+## Next steps
+
+- [Book](https://scbrown.github.io/desire-path/)
+- [README](https://github.com/scbrown/desire-path#readme)
+- [Skill](https://github.com/scbrown/desire-path/blob/main/skills/desire-path/SKILL.md)
 - Command help: `dp help` and `dp prime --help` (no shipped man page).
 <!-- END dp prime -->

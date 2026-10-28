@@ -71,7 +71,7 @@
       "source": "AGENTS.md",
       "subject": "http://aegis.gastown.local/ontology/doc/desire-path/AGENTS.md",
       "summary": "Keep dependencies minimal, use the standard testing package with table-driven cases, and use pure-Go SQLite to preserve builds without CGo.",
-      "source_sha256": "3104c1737550fdf8878afaf4557de4cbdb4c04db2c6c1cfc5dea3461339756ef",
+      "source_sha256": "7e2981504513b5852e3f268dbc2aaf24ef79efb94198364af6609f1dee85debb",
       "type": "DecisionRecord",
       "properties": {
         "status": "active",
@@ -104,7 +104,7 @@
       "source": "AGENTS.md",
       "subject": "http://aegis.gastown.local/ontology/doc/desire-path/AGENTS.md",
       "summary": "Use the source development instructions for package layout, source plugins, dependency policy and tests.",
-      "source_sha256": "3104c1737550fdf8878afaf4557de4cbdb4c04db2c6c1cfc5dea3461339756ef",
+      "source_sha256": "7e2981504513b5852e3f268dbc2aaf24ef79efb94198364af6609f1dee85debb",
       "properties": {
         "startHereOrder": 3
       }
