@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" role="img" aria-labelledby="title desc">
+<title id="title">Desire Path: turn a failed call into guidance</title>
+<desc id="desc">A synthetic failed tool-call fixture becomes a tracked desire path and an operator-authored correction. Local database only. The animation repeats. The adjacent transcript provides a static alternative.</desc>
+<rect width="100%" height="100%" rx="16" fill="#101827"/>
+<path d="M0 54H1000" stroke="#334155"/>
+<circle cx="28" cy="27" r="7" fill="#fb7185"/>
+<circle cx="52" cy="27" r="7" fill="#fbbf24"/>
+<circle cx="76" cy="27" r="7" fill="#34d399"/>
+<text x="110" y="34" fill="#e2e8f0" font-family="monospace" font-size="20">Desire Path: turn a failed call into guidance</text>
+<g id="frame0" visibility="hidden" font-family="DejaVu Sans Mono, Menlo, monospace" font-size="24">
+<animate attributeName="visibility" calcMode="discrete" values="visible;hidden;hidden" keyTimes="0.000000;0.150000;1.000000" dur="20.000s" repeatCount="indefinite"/>
+<text x="28" y="94" fill="#6ee7b7" xml:space="preserve">$ dp --db demo.db ingest --source claude-code &lt; failed-read.json</text>
+<text x="28" y="126" fill="#f1f5f9" xml:space="preserve">metrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset — nothing </text>
+<text x="28" y="158" fill="#f1f5f9" xml:space="preserve">pushed (set it to enable metrics)</text>
+<text x="28" y="190" fill="#f1f5f9" xml:space="preserve">metrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset — nothing </text>
+<text x="28" y="222" fill="#f1f5f9" xml:space="preserve">pushed (set it to enable metrics)</text>
+<text x="28" y="254" fill="#f1f5f9" xml:space="preserve">Ingested invocation: 77f62c0c-c6d3-4fb5-9b5b-2231af071fe9 </text>
+<text x="28" y="286" fill="#f1f5f9" xml:space="preserve">(source: claude-code, tool: read_file)</text>
+</g>
+<g id="frame1" visibility="hidden" font-family="DejaVu Sans Mono, Menlo, monospace" font-size="24">
+<animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden;hidden" keyTimes="0.000000;0.150000;0.400000;1.000000" dur="20.000s" repeatCount="indefinite"/>
+<text x="28" y="94" fill="#6ee7b7" xml:space="preserve">$ dp --db demo.db paths --top 3</text>
+<text x="28" y="126" fill="#f1f5f9" xml:space="preserve">RANK  PATTERN    COUNT  FIRST_SEEN            LAST_SEEN</text>
+<text x="28" y="158" fill="#f1f5f9" xml:space="preserve">             ALIAS</text>
+<text x="28" y="190" fill="#f1f5f9" xml:space="preserve">1     read_file  1      2026-10-24T05:34:45Z  </text>
+<text x="28" y="222" fill="#f1f5f9" xml:space="preserve">2026-10-24T05:34:45Z</text>
+</g>
+<g id="frame2" visibility="hidden" font-family="DejaVu Sans Mono, Menlo, monospace" font-size="24">
+<animate attributeName="visibility" calcMode="discrete" values="hidden;visible;hidden;hidden" keyTimes="0.000000;0.400000;0.650000;1.000000" dur="20.000s" repeatCount="indefinite"/>
+<text x="28" y="94" fill="#6ee7b7" xml:space="preserve">$ dp --db demo.db map read_file --doc &#x27;Use the Read tool to open </text>
+<text x="28" y="126" fill="#f1f5f9" xml:space="preserve">a file.&#x27; --excerpt</text>
+<text x="28" y="158" fill="#f1f5f9" xml:space="preserve">Doc mapping set: read_file -&gt; Use the Read tool to open a file. </text>
+<text x="28" y="190" fill="#f1f5f9" xml:space="preserve">(id: dm-2fa1add4)</text>
+</g>
+<g id="frame3" visibility="visible" font-family="DejaVu Sans Mono, Menlo, monospace" font-size="24">
+<animate attributeName="visibility" calcMode="discrete" values="hidden;visible;visible" keyTimes="0.000000;0.650000;1.000000" dur="20.000s" repeatCount="indefinite"/>
+<text x="28" y="94" fill="#6ee7b7" xml:space="preserve">$ dp --db demo.db suggest --tool read_file</text>
+<text x="28" y="126" fill="#f1f5f9" xml:space="preserve">--- read_file [dm-2fa1add4] ---</text>
+<text x="28" y="158" fill="#f1f5f9" xml:space="preserve">  Doc:  Use the Read tool to open a file.</text>
+<text x="28" y="190" fill="#f1f5f9" xml:space="preserve">  Use the Read tool to open a file.</text>
+</g>
+</svg>

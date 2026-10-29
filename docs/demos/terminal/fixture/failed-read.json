@@ -1,0 +1,8 @@
+{
+  "tool_name": "read_file",
+  "session_id": "demo",
+  "tool_input": {
+    "path": "notes.txt"
+  },
+  "error": "unknown tool: read_file"
+}
