@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/intigraph/desire-path/compare/v0.10.1...v0.11.0) (2026-10-29)
+
+
+### Features
+
+* **cli:** dp prime per the stack prime contract (aegis-km3g.9) ([#52](https://github.com/intigraph/desire-path/issues/52)) ([a9de7f0](https://github.com/intigraph/desire-path/commit/a9de7f0e6d981e9814901abd4cbaf64793993f6b))
+
+
+### Bug Fixes
+
+* **docs:** refresh README witnesses after visual integration ([#55](https://github.com/intigraph/desire-path/issues/55)) ([5541d1e](https://github.com/intigraph/desire-path/commit/5541d1e2029e69730a4f8cc10e5423fc81299e06))
+
 ## [0.10.1](https://github.com/intigraph/desire-path/compare/v0.10.0...v0.10.1) (2026-10-25)
 
 
