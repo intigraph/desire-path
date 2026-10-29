@@ -20,6 +20,15 @@ fewer repeated tool-call failures. It stores calls locally, ranks recurring
 failures, and records mappings from mistaken tool names to real ones.**
 The name comes from the trails people wear through grass: evidence of where a path is needed.
 
+## Why you would want it
+
+- **Find recurring friction:** rank failed tool calls rather than guessing what to fix.
+- **Record the intended tool:** keep explicit mappings from mistaken names to real tools.
+- **Inspect calls locally:** collect and query failures without a Quipu server.
+
+[The Desire Path book](https://intigraph.github.io/desire-path/)
+explains ingestion, analysis and agent integration.
+
 ## Install
 
 ```sh
@@ -35,7 +44,7 @@ Set `STACK_INSTALL_ROOT` on the receiving shell for another prefix.
 Pinned releases, alternatives, configuration and removal are in the
 [installation and usage reference](docs/installation-reference.md).
 
-## Try it
+## First success in three commands
 
 ![Animated terminal: collect a failed call and add operator-authored guidance](docs/demos/terminal/demo.svg)
 
@@ -60,7 +69,81 @@ read_file 1
 The failure became a queryable pattern without configuring an agent or touching your usual database.
 An optional-metrics diagnostic may also appear on stderr; see [troubleshooting](https://scbrown.github.io/desire-path/getting-started.html#troubleshooting).
 
-## Next steps
+## On your own data
+
+After your agent has recorded calls:
+
+| question | command |
+|---|---|
+| Which failures repeat? | `dp paths --top 5` |
+| What happened for this tool? | `dp inspect read_file` |
+| What tool might have been intended? | `dp similar read_file` |
+| How do I record the intended mapping? | `dp alias read_file Read` |
+| How do I export the failures? | `dp export --format json` |
+
+An alias records a mapping. Active interception is a separate [pave setup](https://scbrown.github.io/desire-path/commands/pave.html).
+See the [CLI reference](https://scbrown.github.io/desire-path/commands/) for flags and all commands.
+
+### Bounded failure-family measurements
+
+Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --max-records 10000 --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
+
+`--max-records` defaults to 10000 and accepts 1 through 100000. The store query
+loads at most the cap plus one sentinel; overflow returns an error without partial
+counts. Future records after `--until` conservatively consume this candidate cap
+because the existing store selector bounds only `--since`. JSON also identifies
+the exact `since`/`until`, `max_records`, `input_records` and `complete: true`.
+Complete means the candidate inventory fit the cap, not that normalization or
+failure capture was complete: consumers must still inspect `unknown` and
+`excluded`. Nonzero counts also include fixed-key `unknown_by_reason`
+(`invalid_tool_name`, `unsupported_command_shape`) and `excluded_by_reason`
+(`turn_pattern`) maps. These are coarse parser branches, not individual commands
+or a reason to treat unsupported records as normalized. Older reports omit them;
+their unsupported kinds cannot be recovered from aggregate totals alone.
+A record cap bounds materialized rows, not total input bytes or query
+latency. Prefer one current window for scheduled threshold evaluation; a historical
+report requires its own bounded read-cost admission.
+
+Local `failure-families` reads require an existing database at the current schema
+version. The command opens it read-only: missing databases and schema mismatches
+return an error without creating a store or migrating it. Configured remote
+stores continue to use their existing read API.
+
+
+## Wire it into your agent
+
+For Claude Code, with `dp` on the agent's PATH:
+
+```bash
+dp init --source claude-code
+dp sources
+```
+
+The installer merges hooks into `~/.claude/settings.json`. It installs ingestion
+for successes and failures, plus signposting and correction hooks. Review that
+file after installation. [Using agents](https://scbrown.github.io/desire-path/integrations/)
+explains the installed hooks and the Codex, Cursor, and Kiro source plugins.
+
+Start agent orientation with `dp prime` (`--brief`, `--json`, or `--static`).
+It reads existing state without initializing a database or installing hooks.
+See the [agent primer](https://intigraph.github.io/desire-path/commands/prime.html)
+and [Desire Path skill](skills/desire-path/SKILL.md).
+
+## Before you start
+
+The shell installer needs Python 3.9+, curl and Linux or macOS. The example
+needs a Bash-compatible shell and Python 3; source builds need Go 1.24+.
+Calls are stored locally by default. Review hook settings and captured data
+before enabling an agent integration. A recorded alias and active interception
+are separate capabilities.
+
+## What's next
+
+- [The Desire Path book](https://intigraph.github.io/desire-path/): concepts and commands.
+- [Docs map](https://intigraph.github.io/desire-path/docs-map.html): find the detailed guides.
+- [Getting started](https://intigraph.github.io/desire-path/getting-started.html): configure your first source.
+
+### Related tools and repository knowledge
 
 - [Tambo](https://github.com/scbrown/tambo): guided stack installation and verification.
 - [Camayoc](https://github.com/scbrown/camayoc): governed memory and vocabulary.
@@ -68,7 +151,7 @@ An optional-metrics diagnostic may also appear on stderr; see [troubleshooting](
 
 **Load this repository’s graph:** public repository-pendant assets have not yet been verified. When a release supplies the archive, checksum and provenance, follow the [verified import workflow](https://scbrown.github.io/quipu/sharing/index.html): extract the share directory and use `quipu import SHARE_DIR --db repository.db`. Import stages knowledge; ROOT stays unchanged.
 
-## The stack
+## 🧺 The stack
 
 <!-- stack-table:start -->
 
@@ -110,33 +193,3 @@ See the [development guide](book/src/development/contributing.md).
 ## 📜 License
 
 [Apache-2.0](LICENSE).
-
-Repeated failures can be measured with `dp failure-families --since <RFC3339> --until <RFC3339> --window 1h --max-records 10000 --json`. It groups by tool, parsed shell command-program shape and a bounded error class; compound commands are grouped as programs, without claiming which subcommand failed. Argument values, paths and error messages are absent from output. Unsupported wrappers and dynamic command identities are counted separately as UNKNOWN. Synthetic turn-pattern observations are excluded. `peak_window` measures the historical rolling maximum; `current_window` measures the window ending at `--until`. These are observations, not an alerting policy or a claim of complete capture.
-
-`--max-records` defaults to 10000 and accepts 1 through 100000. The store query
-loads at most the cap plus one sentinel; overflow returns an error without partial
-counts. Future records after `--until` conservatively consume this candidate cap
-because the existing store selector bounds only `--since`. JSON also identifies
-the exact `since`/`until`, `max_records`, `input_records` and `complete: true`.
-Complete means the candidate inventory fit the cap, not that normalization or
-failure capture was complete: consumers must still inspect `unknown` and
-`excluded`. Nonzero counts also include fixed-key `unknown_by_reason`
-(`invalid_tool_name`, `unsupported_command_shape`) and `excluded_by_reason`
-(`turn_pattern`) maps. These are coarse parser branches, not individual commands
-or a reason to treat unsupported records as normalized. Older reports omit them;
-their unsupported kinds cannot be recovered from aggregate totals alone.
-A record cap bounds materialized rows, not total input bytes or query
-latency. Prefer one current window for scheduled threshold evaluation; a historical
-report requires its own bounded read-cost admission.
-
-Local `failure-families` reads require an existing database at the current schema
-version. The command opens it read-only: missing databases and schema mismatches
-return an error without creating a store or migrating it. Configured remote
-stores continue to use their existing read API.
-
-## Agent orientation
-
-Start with `dp prime` (`--brief`, `--json`, or `--static`). It reads existing
-state without initializing a database or installing hooks. See the
-[agent primer](docs/book/src/commands/prime.md) and
-[Desire Path skill](skills/desire-path/SKILL.md).
