@@ -1,0 +1,87 @@
+{
+  "theme": "stack-terminal-24",
+  "versions": {
+    "dp": "dp 0.10.0 (0681233)"
+  },
+  "binary_sha256": {
+    "dp": "c94213f4bd5a9484f23824ca20ccccbc6b3b24e9a398dd50da60136320b3ebdb"
+  },
+  "version_args": {
+    "dp": [
+      "version"
+    ]
+  },
+  "inputs_sha256": {
+    "render.py": "bebbe000565314f18a58731f2a1a4690577db127b3673fa10a45ce74eef0f23c",
+    "tape": "8f1dbc6e9ba087ab2711b06370e26d3717df8b44dba9a021ee59679ec61b2ddf",
+    "failed-read.json": "a2be1d07ca513cc5ddadec0776896914bd49bb3b15fafef41c69875653169c10"
+  },
+  "duration_seconds": 20.0,
+  "timeline": "deliberate reading holds; execution times recorded separately",
+  "frames_checked": 4,
+  "commands": [
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "ingest",
+        "--source",
+        "claude-code"
+      ],
+      "exit": 0,
+      "seconds": 0.446949,
+      "stdout": "",
+      "stderr": "metrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset \u2014 nothing pushed (set it to enable metrics)\nmetrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset \u2014 nothing pushed (set it to enable metrics)\nIngested invocation: 77f62c0c-c6d3-4fb5-9b5b-2231af071fe9 (source: claude-code, tool: read_file)\n"
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "paths",
+        "--top",
+        "3"
+      ],
+      "exit": 0,
+      "seconds": 0.003729,
+      "stdout": "RANK  PATTERN    COUNT  FIRST_SEEN            LAST_SEEN             ALIAS\n1     read_file  1      2026-10-24T05:34:45Z  2026-10-24T05:34:45Z  \n",
+      "stderr": ""
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "map",
+        "read_file",
+        "--doc",
+        "Use the Read tool to open a file.",
+        "--excerpt"
+      ],
+      "exit": 0,
+      "seconds": 0.015512,
+      "stdout": "Doc mapping set: read_file -> Use the Read tool to open a file. (id: dm-2fa1add4)\n",
+      "stderr": ""
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "suggest",
+        "--tool",
+        "read_file"
+      ],
+      "exit": 0,
+      "seconds": 0.008794,
+      "stdout": "--- read_file [dm-2fa1add4] ---\n  Doc:  Use the Read tool to open a file.\n  Use the Read tool to open a file.\n\n",
+      "stderr": ""
+    }
+  ],
+  "sha256": {
+    "demo.svg": "61d5f266be6d5e915c03d84c045e1727a0cdac3e16e47b482ef0cbde5b5c6ebe",
+    "transcript.txt": "08b8f6b10e1508bbb1645125330b1a2ef1faf3565b912dfa9af780fa48b3a6ae",
+    "demo.cast": "0077040f505033df2dbb4fd6e31f0e036ed8fd890246a433dff600b2a9942b4f"
+  }
+}

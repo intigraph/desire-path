@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/thread-workshop/desire-path.png" width="704" alt="Desire Path: stepping stones turn friction into a useful route, in the shared Thread Workshop illustration style"/></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
@@ -34,6 +36,12 @@ Pinned releases, alternatives, configuration and removal are in the
 [installation and usage reference](docs/installation-reference.md).
 
 ## Try it
+
+![Animated terminal: collect a failed call and add operator-authored guidance](docs/demos/terminal/demo.svg)
+
+A synthetic failure is collected in a local database; the operator writes the
+correction. [Read the transcript](docs/demos/terminal/transcript.txt) or
+[reproduce the recording](docs/demos/terminal.md).
 
 Use a temporary database and one synthetic failed call; Python 3 formats the result:
 

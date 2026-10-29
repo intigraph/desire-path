@@ -1,0 +1,5 @@
+{"version": 2, "width": 65, "height": 14, "title": "Desire Path: turn a failed call into guidance", "env": {"TERM": "dumb"}}
+[0.0, "o", "\u001b[2J\u001b[H$ dp --db demo.db ingest --source claude-code < failed-read.json\r\nmetrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset \u2014 nothing \r\npushed (set it to enable metrics)\r\nmetrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset \u2014 nothing \r\npushed (set it to enable metrics)\r\nIngested invocation: 77f62c0c-c6d3-4fb5-9b5b-2231af071fe9 \r\n(source: claude-code, tool: read_file)\r\n"]
+[3.0, "o", "\u001b[2J\u001b[H$ dp --db demo.db paths --top 3\r\nRANK  PATTERN    COUNT  FIRST_SEEN            LAST_SEEN\r\n             ALIAS\r\n1     read_file  1      2026-10-24T05:34:45Z  \r\n2026-10-24T05:34:45Z\r\n"]
+[8.0, "o", "\u001b[2J\u001b[H$ dp --db demo.db map read_file --doc 'Use the Read tool to open \r\na file.' --excerpt\r\nDoc mapping set: read_file -> Use the Read tool to open a file. \r\n(id: dm-2fa1add4)\r\n"]
+[13.0, "o", "\u001b[2J\u001b[H$ dp --db demo.db suggest --tool read_file\r\n--- read_file [dm-2fa1add4] ---\r\n  Doc:  Use the Read tool to open a file.\r\n  Use the Read tool to open a file.\r\n"]

@@ -1,0 +1,17 @@
+$ dp --db demo.db ingest --source claude-code < failed-read.json
+metrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset — nothing pushed (set it to enable metrics)
+metrics: DESIRE_PATH_METRICS_PUSHGATEWAY is unset — nothing pushed (set it to enable metrics)
+Ingested invocation: 77f62c0c-c6d3-4fb5-9b5b-2231af071fe9 (source: claude-code, tool: read_file)
+[exit 0]
+$ dp --db demo.db paths --top 3
+RANK  PATTERN    COUNT  FIRST_SEEN            LAST_SEEN             ALIAS
+1     read_file  1      2026-10-24T05:34:45Z  2026-10-24T05:34:45Z
+[exit 0]
+$ dp --db demo.db map read_file --doc 'Use the Read tool to open a file.' --excerpt
+Doc mapping set: read_file -> Use the Read tool to open a file. (id: dm-2fa1add4)
+[exit 0]
+$ dp --db demo.db suggest --tool read_file
+--- read_file [dm-2fa1add4] ---
+  Doc:  Use the Read tool to open a file.
+  Use the Read tool to open a file.
+[exit 0]

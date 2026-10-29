@@ -1,0 +1,79 @@
+{
+  "title": "Desire Path: turn a failed call into guidance",
+  "description": "A synthetic failed tool-call fixture becomes a tracked desire path and an operator-authored correction. Local database only.",
+  "width": 1000,
+  "height": 620,
+  "font_size": 24,
+  "line_height": 32,
+  "inputs": [
+    "failed-read.json"
+  ],
+  "version_args": {
+    "dp": [
+      "version"
+    ]
+  },
+  "steps": [
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "ingest",
+        "--source",
+        "claude-code"
+      ],
+      "stdin": "failed-read.json",
+      "allow_stderr": true,
+      "hold": 3,
+      "requires": [
+        "Ingested invocation:"
+      ]
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "paths",
+        "--top",
+        "3"
+      ],
+      "hold": 5,
+      "requires": [
+        "read_file"
+      ]
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "map",
+        "read_file",
+        "--doc",
+        "Use the Read tool to open a file.",
+        "--excerpt"
+      ],
+      "hold": 5,
+      "allow_stderr": true,
+      "requires": [
+        "Doc mapping set:"
+      ]
+    },
+    {
+      "tool": "dp",
+      "args": [
+        "--db",
+        "demo.db",
+        "suggest",
+        "--tool",
+        "read_file"
+      ],
+      "hold": 7,
+      "requires": [
+        "Use the Read tool to open a file."
+      ]
+    }
+  ]
+}
