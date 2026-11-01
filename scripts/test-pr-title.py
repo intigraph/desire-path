@@ -16,6 +16,7 @@ class TitleTests(unittest.TestCase):
         for title, accepted in [
             ('fix: keep public #42', True), ('feat(cli)!: keep model-v2', True),
             ('fix: not-aegis-abc123', True), ('not conventional', False),
+            ('fix: keep aegis-abc123.2suffix and aegis-abc123.label', True),
             ('fix: keep [aegis-abc123]', False), ('fix: hq-abc123.2.10', False),
             ('fix: qp-abcdefghij', False), ('fix: gassy-abc123', False),
             ('fix: line\nsecond', False), (None, False),
