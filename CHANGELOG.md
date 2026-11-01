@@ -5,7 +5,7 @@
 
 ### Features
 
-* **cli:** dp prime per the stack prime contract (aegis-km3g.9) ([#52](https://github.com/intigraph/desire-path/issues/52)) ([a9de7f0](https://github.com/intigraph/desire-path/commit/a9de7f0e6d981e9814901abd4cbaf64793993f6b))
+* **cli:** dp prime per the stack prime contract ([#52](https://github.com/intigraph/desire-path/issues/52)) ([a9de7f0](https://github.com/intigraph/desire-path/commit/a9de7f0e6d981e9814901abd4cbaf64793993f6b))
 
 
 ### Bug Fixes
