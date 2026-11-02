@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1](https://github.com/intigraph/desire-path/compare/v0.11.0...v0.11.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ci:** check tracker-free pull request titles on edits ([#57](https://github.com/intigraph/desire-path/issues/57)) ([659067e](https://github.com/intigraph/desire-path/commit/659067e1730459a85a52e757d8a8e1f2ebe338fe))
+* **share:** admit tracked agent-file aliases and export the policy catalogue ([#59](https://github.com/intigraph/desire-path/issues/59)) ([61efd3f](https://github.com/intigraph/desire-path/commit/61efd3fa08fc7787c9ff4f37be40bd716416e5cd))
+
 ## [0.11.0](https://github.com/intigraph/desire-path/compare/v0.10.1...v0.11.0) (2026-10-29)
 
 
