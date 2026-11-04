@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/intigraph/desire-path/compare/v0.11.1...v0.12.0) (2026-11-04)
+
+
+### Features
+
+* **share:** publish pendant entities under w3id.org/intigraph names ([#60](https://github.com/intigraph/desire-path/issues/60)) ([5cedafc](https://github.com/intigraph/desire-path/commit/5cedafc4135543dc439ef60634bf16ff8a94b701))
+
 ## [0.11.1](https://github.com/intigraph/desire-path/compare/v0.11.0...v0.11.1) (2026-11-01)
 
 
