@@ -1,7 +1,7 @@
 # Read-time entity legend (dp legend-refresh)
 
 The entity legend tells an agent which Quipu entities the text it just read
-refers to. After a `Read`, or a Bash `cat`/`head`/`tail`/`sed -n`/`br show`,
+refers to. After a `Read`, or a Bash `cat`/`head`/`tail`/`sed -n`,
 the PostToolUse hook can add one line:
 
 ```text
