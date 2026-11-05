@@ -8,7 +8,7 @@ package cli
 // the harness-neutral one, and it
 // carries dp's FULL hook set (ingest, signpost, signpost-prefetch,
 // pave-correct and the Codex Stop stdin hook), which until now existed only as a copy
-// inside caboodle.
+// inside tambo.
 //
 // On a host running shantytown, install REGISTERS the bundle with `st ops hooks
 // register`; st renders it into every role's Claude and Codex settings on every

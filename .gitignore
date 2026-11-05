@@ -12,3 +12,6 @@ docs/book/book/
 
 # mdbook build output
 book/_build/
+
+# Legacy local tracker state is never published.
+/.beads/
