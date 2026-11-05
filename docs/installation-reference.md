@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://github.com/scbrown/desire-path/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://github.com/scbrown/desire-path/actions/workflows/ci.yml"><img src="https://github.com/scbrown/desire-path/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/scbrown/caboodle"><img src="https://img.shields.io/badge/stack-quipu-8B5E3C.svg" alt="Quipu stack"></a>
+  <a href="https://github.com/intigraph/tambo"><img src="https://img.shields.io/badge/stack-quipu-8B5E3C.svg" alt="Quipu stack"></a>
 </p>
 
 **Desire Path (`dp`) is a CLI and a set of agent hooks for developers who want
@@ -136,7 +136,7 @@ Keep tool inputs and error messages in mind when sharing [exports](https://scbro
 
 ## 🧺 The stack
 
-Caboodle installs these together and proves each one works; every tool also stands alone.
+Tambo installs these together and proves each one works; every tool also stands alone.
 
 ## Contributing
 

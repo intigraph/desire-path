@@ -1,10 +1,10 @@
 # The stack
 
-Caboodle installs these together and proves each one works; every tool also stands alone.
+Tambo installs these together and proves each one works; every tool also stands alone.
 
 | tool | what it gives your agents |
 |---|---|
-| [caboodle](https://github.com/scbrown/caboodle) | one wizard that installs the stack and proves it works |
+| [tambo](https://github.com/intigraph/tambo) | one wizard that installs the stack and proves it works |
 | [quipu](https://github.com/scbrown/quipu) | a knowledge graph that refuses facts that break its rules |
 | [camayoc](https://github.com/scbrown/camayoc) | the starter vocabulary, and how new knowledge earns its way in |
 | [bobbin](https://github.com/scbrown/bobbin) | search and context over your repositories, served over MCP |
@@ -13,7 +13,7 @@ Caboodle installs these together and proves each one works; every tool also stan
 
 Desire Path supplies evidence about failed tool calls. Bobbin supplies repository
 search, and Yupana supplies structural queries. Quipu and Camayoc provide governed
-knowledge; Caboodle installs and checks the tools. Basic Desire Path capture and
+knowledge; Tambo installs and checks the tools. Basic Desire Path capture and
 queries work locally without any of the other services.
 
 The optional signposting mode can suggest a search or structural command after a

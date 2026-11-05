@@ -38,8 +38,8 @@ published by the Pages workflow. Use the current user guide above for CLI setup.
 ## Theme provenance
 
 The Coal override in `docs/book/custom/css/custom.css` is vendored byte-for-byte
-from [Caboodle at b351e6de](https://github.com/scbrown/caboodle/blob/b351e6debd4e9b6f5e461d9ebbfa264feb9f4363/docs/book/custom/css/custom.css).
-Keep it in sync with the [stack standard](https://github.com/scbrown/caboodle/blob/main/docs/stack/README-STANDARD.md).
+from [Tambo at b351e6de](https://github.com/intigraph/tambo/blob/b351e6debd4e9b6f5e461d9ebbfa264feb9f4363/docs/book/custom/css/custom.css).
+Keep it in sync with the [stack standard](https://github.com/intigraph/tambo/blob/main/docs/stack/README-STANDARD.md).
 
 ## Maintainers
 
