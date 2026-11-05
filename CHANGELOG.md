@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/intigraph/desire-path/compare/v0.12.0...v0.12.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* require pinned embedding providers in repository shares ([#63](https://github.com/intigraph/desire-path/issues/63)) ([6e11b87](https://github.com/intigraph/desire-path/commit/6e11b87c433f51d2f9f0a8223d9a6f7795dc8cbe))
+
 ## [0.12.0](https://github.com/intigraph/desire-path/compare/v0.11.1...v0.12.0) (2026-11-04)
 
 
