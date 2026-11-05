@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.2](https://github.com/intigraph/desire-path/compare/v0.12.1...v0.12.2) (2026-11-05)
+
+
+### Documentation
+
+* use Tambo installer links and exclude legacy tracker state ([#65](https://github.com/intigraph/desire-path/issues/65)) ([4d4e925](https://github.com/intigraph/desire-path/commit/4d4e9256b40b8aad5d0c2c01f569d4e2747fa9b6))
+
 ## [0.12.1](https://github.com/intigraph/desire-path/compare/v0.12.0...v0.12.1) (2026-11-05)
 
 
