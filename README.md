@@ -194,7 +194,6 @@ See the [development guide](book/src/development/contributing.md).
 
 [Apache-2.0](LICENSE).
 
-
 ### Repository pendant provider
 
 Repository pendant builders require explicitly pinned model and tokenizer bytes
