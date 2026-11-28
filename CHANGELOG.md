@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.3](https://github.com/intigraph/desire-path/compare/v0.12.2...v0.12.3) (2026-11-28)
+
+
+### Bug Fixes
+
+* **share:** surface the failing tool's stderr when a publish command fails ([0b1ed0a](https://github.com/intigraph/desire-path/commit/0b1ed0a42b47559351153be9ccbeb66a54e75108))
+* **share:** surface the failing tool's stderr when a publish command fails ([776462d](https://github.com/intigraph/desire-path/commit/776462d458154b5e163632effa84d4e02cd647e7))
+
 ## [0.12.2](https://github.com/intigraph/desire-path/compare/v0.12.1...v0.12.2) (2026-11-05)
 
 
